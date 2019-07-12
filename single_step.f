@@ -1,4 +1,4 @@
-      subroutine single_step(itimestep, dt, ntotal,nvirt, hsml, mass, x,
+      subroutine single_step(itimestep, dt, ntotal, nvirt,hsml, mass, x,
      &           vx,u, s,rho, p, t, tdsdt,dx,dvx, du, ds, drho,itype,av,  
      &           niac, pair_i, pair_j) 
 
@@ -32,11 +32,12 @@ c     av       :  Monaghan average velocity                        [out]
       include 'param.inc'
 
       integer itimestep, ntotal, itype(maxn)
-      double precision dt, hsml(maxn), mass(maxn),  u(maxn), s(maxn), 
-     &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn),  du(maxn),
+      double precision dt, hsml(maxn), mass(maxn), u(maxn), s(maxn), 
+     &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn), du(maxn),
      &        ds(maxn), drho(maxn)          
-      integer i, d,j,k, nvirt, niac, pair_i(max_interaction),
-     &        pair_j(max_interaction), ns(maxn), nwall, maxi
+      integer i, d,j,k,nvirt, niac, pair_i(max_interaction),
+     &        pair_j(max_interaction), ns(maxn), nwall, maxi, ntotalvirt
+c      common nvirt
       double precision w(max_interaction), dwdx(3,max_interaction),  
      &       indvxdt(dim,maxn),exdvxdt(dim,maxn),ardvxdt(dim,maxn),  
      &       avdudt(maxn), ahdudt(maxn), c(maxn), eta(maxn),dis_x, 
@@ -54,24 +55,49 @@ c     av       :  Monaghan average velocity                        [out]
         enddo
       enddo  
  
-c---  Positions of virtual (boundary) particles: 
-
-     
-      if (virtual_part) then 
+c---  Positions of virtual (boundary) particles:
+c      print *,"begining timestep"
+c      print *,itimestep
+c      print *,x(2,ntotal+1)
+      nvirt=0
+      if (itimestep.eq.1) then 
        
          call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall)
-       
-      endif 
-     
+c        print *,"after virt_part"
+c        print *,x(2,ntotal+1)
+c        open(1,file="../data/ini_virt.dat")
+      
+c        do i = ntotal+1, ntotal+nvirt 
+c          write(1,1001) i, (x(d, i),d = 1, dim), p(i)
+c        enddo   
+c1001    format(1x, I5, 5(2x, e14.8)) 
+      
+      endif
+
+c      close(1) 
+
+      
 c---  Interaction parameters, calculating neighboring particles
 c     and optimzing smoothing length
+      open(1,file="../data/xv_vp.dat")
+      read(1,*) nvirt
+      close(1)
+
+c     print *,nvirt
+c      print *,"before nps"
+c      print *,x(2,ntotal+1)
 
       if (nnps.eq.1) then 
-        call direct_find(itimestep, ntotal+nvirt,hsml,x,niac,pair_i,
+        call direct_find(itimestep, ntotal,nvirt, hsml,x,niac,pair_i,
      &       pair_j,w,dwdx,ns)
+
+            
       else if (nnps.eq.2) then
-        call link_list(itimestep, ntotal+nvirt,hsml(1),x,niac,pair_i,
+c        call link_list(itimestep, ntotal+nvirt,hsml(1),x,niac,pair_i,
+c     &       pair_j,w,dwdx,ns)
+       ntotalvirt = ntotal + nvirt
+        call link_list(itimestep, ntotalvirt, hsml(1),x,niac,pair_i,
      &       pair_j,w,dwdx,ns)
 c---   else if (nnps.eq.3) then 
 c       call tree_search(itimestep, ntotal+nvirt,hsml,x,niac,pair_i,
@@ -81,27 +107,21 @@ c     &       pair_j,w,dwdx,ns)
 c---  Density approximation or change rate
 c---  summation_density:(4.26)
 c---  con_density: calculting density through continuity equation (4.31)/(4.34)      
-      if (summation_density) then      
-        call sum_density(ntotal+nvirt,hsml,mass,niac,pair_i,pair_j,w,
-     &       itype,rho)          
-        call p_art_water(rho(i), x(2,i),p(i),c(i))     
-c      else   
-        
-      endif
+
 
       if(dynamic) then
 c---  Dynamic viscosity:
 
-      if (visc) call viscosity(ntotal+nvirt,itype,x,rho,eta)
+      if (visc) call viscosity(ntotalvirt,itype,x,rho,eta)
        
 c---  Internal forces:(4.42)/(4.43)  4.58/4.59
  
-      call int_force(itimestep,dt,ntotal+nvirt,hsml,mass,vx,niac,rho,
+      call int_force(itimestep,dt,ntotalvirt,hsml,mass,vx,niac,rho,
      &     eta, pair_i,pair_j,dwdx,u,itype,x,t,c,p,indvxdt,tdsdt,du) 
                   
 c---  Artificial viscosity:(4.66)
 
-      if (visc_artificial) call art_visc(ntotal+nvirt,hsml,
+      if (visc_artificial) call art_visc(ntotalvirt,hsml,
      &      mass,x,vx,niac,rho,c,pair_i,pair_j,w,dwdx,ardvxdt,avdudt)
    
       else
@@ -109,17 +129,17 @@ c---  Artificial viscosity:(4.66)
        
 c---  Internal forces:
  
-         call int_force(itimestep,dt,ntotal+nwall,hsml,mass,vx,niac,rho,
+         call int_force(itimestep,dt,ntotal,hsml,mass,vx,niac,rho,
      &     eta, pair_i,pair_j,dwdx,u,itype,x,t,c,p,indvxdt,tdsdt,du) 
                   
 c---  Artificial viscosity:
 
-         if (visc_artificial) call art_visc(ntotal+nwall,hsml,
+         if (visc_artificial) call art_visc(ntotal,hsml,
      &      mass,x,vx,niac,rho,c,pair_i,pair_j,w,dwdx,ardvxdt,avdudt)
       
 c---  External forces:(4.93)
 
-         if (ex_force) call ext_force(ntotal+nvirt,mass,x,vx,niac,
+         if (ex_force) call ext_force(ntotalvirt,mass,x,vx,niac,
      &                  pair_i,pair_j,itype, hsml, exdvxdt)
       endif
 
@@ -128,7 +148,7 @@ c     Calculating the neighboring particles and undating HSML (4.80)/(4.81)
          if (sle.ne.0) call h_upgrade(dt,ntotal, mass, vx, rho, niac, 
      &                   pair_i, pair_j, dwdx, hsml)
 c     Calculating artificial heat attached to the energy equation (4.74)
-         if (heat_artificial) call art_heat(ntotal+nvirt,hsml,
+         if (heat_artificial) call art_heat(ntotalvirt,hsml,
      &         mass,x,vx,niac,rho,u, c,pair_i,pair_j,w,dwdx,ahdudt)
      
 c     Calculating average velocity of each partile for avoiding penetration (4.92)
@@ -139,12 +159,13 @@ c---  Convert velocity, force, and energy to f and dfdt
 
       maxvel = 0.e0
      
-      do i=1,ntotal+nwall
-
+      do i=1,ntotal
+c          print *,indvxdt(dim,i)
         do d=1,dim
 c          dvx(1,i)=0
           dvx(d,i) = indvxdt(d,i) + exdvxdt(d,i) + ardvxdt(d,i)          
         enddo
+c        gravity
         if (self_gravity) then
           dvx(dim, i) = dvx(dim,i)-9.8
          endif
@@ -164,25 +185,38 @@ c   update density & pressure
        enddo
 
 c       print *,p(1)
-
-      call con_density(ntotal+nvirt,mass,niac,pair_i,pair_j,hsml,w,
+      if (summation_density) then      
+c        call sum_density(ntotal+nvirt,hsml,mass,niac,pair_i,pair_j,w,
+c     &       itype,rho)          
+c      do i=1,ntotal+nwall
+c        call p_art_water(rho(i), x(2,i),p(i),c(i))
+c      enddo     
+      else   
+        call con_density(ntotal+nvirt,mass,niac,pair_i,pair_j,hsml,w,
      &       dwdx,vx,itype,x,rho,drho)
       
-      do i = 1,ntotal                   
+      do i = 1,ntotal               
            rho(i) = rho(i) + dt*drho(i)
 	     call p_art_water(rho(i),x(2,i),c(i),p(i))
 c           p(i)=p(i)+9.8*1000*(1.e-3-x(2,i))
 c          if (p(i).lt.0) p(i)=0
       enddo
+      endif
+     
 
 c   correct pressure for mirror particle
-      beta = 315.e0
-      do i = 1,nvirt
-          if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.0)then
-           p(ntotal + i) = p(ntotal+i)-2*9.8*1000*x(2,ntotal+i)
-            rho(ntotal + i)= 1000*(p(ntotal+i)/beta+1)**(1/7)
-           endif
-      enddo
+c      
+c      do i = 1,nvirt
+c          if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.0)then
+c           p(ntotal + i) = p(ntotal+i)-2*9.8*1000*x(2,ntotal+i)
+c            rho(ntotal + i)= 1000*(p(ntotal+i)/beta+1)**(1/7)
+c           endif
+c      enddo
+
+      call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
+     &       rho,u,p,itype, nwall)
+c      print *,"after virt_part"
+c      print *,x(2,ntotal+1)
 
       if (mod(itimestep,print_step).eq.0) then      
           write(*,*)

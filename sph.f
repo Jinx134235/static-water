@@ -22,27 +22,33 @@ c     e-- total energy of particles                                [out]
       include 'param.inc'
 
       integer ntotal, itype(maxn), maxtimestep, d, m, i, yesorno, 
-     & current_ts    
+     & current_ts, nstart    
       double precision x(3,maxn), vx(3, maxn), mass(maxn),rho(maxn),
      &     p(maxn), u(maxn), c(maxn), s(maxn), e(maxn), hsml(maxn), dt
       double precision s1, s2
 
+      current_ts=0
       call time_print
       call time_elapsed(s1)      
 
       
       dt = 5.e-5
       
+  
       call input(x, vx, mass, rho, p, u, itype, hsml, ntotal)     
   1   write(*,*)'  ***************************************************' 
       write(*,*)'          Please input the maximal time steps        '
       write(*,*)'  ***************************************************'
       read(*,*) maxtimestep      
-      current_ts=0
+c      
       call time_integration(x, vx, mass, rho, p, u, c, s, e, itype, 
-     &     hsml, ntotal, maxtimestep, dt )
+     &     hsml, ntotal, maxtimestep, dt, current_ts )
       call output(x, vx, mass, rho, p, u, c, itype, hsml, ntotal)      
-     
+      write(*,*)'  ***************************************************' 
+      write(*,*)'          Run more time steps?(1=yes, 0=no)        '
+      write(*,*)'  ***************************************************'
+      read(*,*) yesorno
+      if(yesorno.eq.1) go to 1
       call time_print
       call time_elapsed(s2)      
       write (*,*)'        Elapsed CPU time = ', s2-s1

@@ -100,7 +100,7 @@ c     Thirdly, calculate the normalized rho, rho=sum(rho)/sum(w)
       end
       
       subroutine con_density(ntotal,mass,niac,pair_i,pair_j,hsml,w,
-     &           dwdx,vx,itype,x,norrho,drhodt)
+     &           dwdx,vx,itype,x,rho,drhodt)
 
 c----------------------------------------------------------------------
 c     Subroutine to calculate the density with SPH continuity approach.
@@ -128,11 +128,12 @@ c     norrho : normalized density of all particles                 [out]
      &        pair_j(max_interaction), itype(maxn)    
       double precision mass(maxn), dwdx(dim,max_interaction),
      &       vx(dim,maxn), x(dim,maxn), rho(maxn), drhodt(maxn),
-     &       hsml(maxn),w(max_interaction),norrho(maxn)
+     &       hsml(maxn),w(max_interaction)
       integer i,j,k,d    
       double precision   vcc, dvx(dim),delta, phi, r,c, dx(dim),hv(dim),
      &       selfdens, wi(maxn)
-      
+c      real wi(maxn)
+
       open(1, file="../data/kernel.dat")
     
       do d=1,dim
@@ -149,12 +150,14 @@ c     Firstly calculate the integration of the kernel over the space
       do i=1,ntotal
         call kernel(r,hv,hsml(i),selfdens,hv)
         wi(i)=selfdens*mass(i)/rho(i)
+        
+c        print *,i,selfdens,rho(i),wi(i)    
       enddo
 
       do k=1,niac
         i = pair_i(k)
         j = pair_j(k)
-       
+c        if (pair_i(k).eq.1) print *, pair_j(k)
          wi(i) = wi(i) + mass(j)/rho(j)*w(k)
          wi(j) = wi(j) + mass(i)/rho(i)*w(k)
        
@@ -166,7 +169,7 @@ c     Firstly calculate the integration of the kernel over the space
  1001     format(2x, I4, 2x, e14.8)
       close(1)
 c  check normalization condition
-c      do i=1,ntotal
+      do i=1,ntotal
 c       if (i.eq.moni_particle) print *,'wi(1600):',wi(moni_particle)
 c         if (i.le.120) print *,i,wi(i)
 c         if (abs(1-wi(i)).gt.1.e-2) then
@@ -174,7 +177,7 @@ c             print *,
 c     &          ' >>> Error <<< : normalization condition unsatisfied'
 c              stop
 c         endif
-c      enddo
+      enddo
 
 c     Secondly calculate the rho integration over the space
 

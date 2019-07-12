@@ -52,26 +52,29 @@ c     3-dim. problem: maxngx = maxngy = maxngz ~ maxn^(1/3)
          scale_k = 3 
       endif 
      
+      
       do i=1,ntotal
         countiac(i) = 0
       enddo
 
 c     Initialize grid:  
 
-      call init_grid(ntotal,hsml,grid,ngridx,ghsmlx,
+      call init_grid(ntotal,hsml,scale_k,grid,ngridx,ghsmlx,
      &     maxgridx,mingridx,dgeomx)
       
 c     Position particles on grid and create linked list:
       
       do i=1,ntotal
-        call grid_geom(i,x(1,i),ngridx,maxgridx,mingridx,dgeomx,gcell)
+        call grid_geom(i,x(1,i),hsml,scale_k,maxgridx,mingridx,gcell)
         do d=1,dim
           xgcell(d,i) = gcell(d)
+c          if (i.eq.1) print *,xgcell(d,i)
         enddo
+
         celldata(i) = grid(gcell(1),gcell(2),gcell(3))
         grid(gcell(1),gcell(2),gcell(3)) = i
       enddo
-
+c      print *,grid(1,8,1)
 c     Determine interaction parameters:
 
       niac = 0

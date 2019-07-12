@@ -1,5 +1,5 @@
       subroutine time_integration(x,vx, mass, rho, p, u, c, s, e, itype, 
-     &           hsml, ntotal, maxtimestep, dt)
+     &           hsml, ntotal, maxtimestep, dt, current_ts)
      
 c----------------------------------------------------------------------
 c      x-- coordinates of particles                       [input/output]
@@ -35,6 +35,7 @@ c      dt-- timestep                                             [input]
      &       drho(maxn),  av(3, maxn), ds(maxn),
      &       t(maxn), tdsdt(maxn), temp_u, temp_rho 
       double precision  time
+c      common nvirt
                
       do i = 1, ntotal
         do d = 1, dim
@@ -42,11 +43,9 @@ c      dt-- timestep                                             [input]
         enddo
       enddo  
      
-      nvirt = 0
-
-       
-
-      do itimestep = 1, maxtimestep   
+c      nvirt = 0
+      nstart = current_ts
+      do itimestep = nstart+1, nstart+maxtimestep   
 	   
         current_ts=current_ts+1
         if (mod(itimestep,print_step).eq.0) then
@@ -65,15 +64,13 @@ c---  Definition of variables out of the function vector:
                   
         
          if(dynamic) then
-              do i=1,nvirt
+           do i=1,nvirt
                  rho(ntotal+i) = rho(ntotal+i) + dt*drho(ntotal+i)
                call p_art_water(rho(ntotal+i),x(2,ntotal+i),c(ntotal+i),
      &         p(ntotal+i))
-         enddo
-
+            enddo
          endif
-        
-     
+            
         time = time + dt
 
 	if (mod(itimestep,save_step).eq.0) then
@@ -93,7 +90,7 @@ c         enddo
 100     format(1x,3(2x,e12.6))
 	 
       enddo
-
-c--      nstart=current_ts
+c      print *,current_ts
+      
 
       end

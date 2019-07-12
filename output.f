@@ -33,8 +33,8 @@ c     write(1,*) ntotal
         write(3,1003) i, itype(i), hsml(i)                               
       enddo 
       
-1001  format(1x, I6, 6(2x, e14.8))
-1002  format(1x, I6, 7(2x, e14.8)) 
+1001  format(1x, I6, 4(2x, e14.8))
+1002  format(1x, I6, 4(2x, e14.8)) 
 1003  format(1x, I6, 2x, I4, 2x, e14.8)      
                                         
       close(1)

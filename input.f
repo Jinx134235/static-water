@@ -55,8 +55,8 @@ c     load initial particle information from external disk file
           write(2,1002) i, mass(i), rho(i), p(i), u(i)         
           write(3,1003) i, itype(i), hsml(i)    
         enddo   
-1001    format(1x, I5, 6(2x, e14.8)) 
-1002    format(1x, I5, 7(2x, e14.8)) 
+1001    format(1x, I5, 4(2x, e14.8)) 
+1002    format(1x, I5, 4(2x, e14.8)) 
 1003    format(1x, I5, 2x, I2, 2x, e14.8) 
         write(*,*)'  **************************************************'
         write(*,*)'      Initial particle configuration generated   '       
@@ -99,32 +99,33 @@ c     ntotal-- total particle number                               [out]
       double precision xl, yl, dx, dy
 
 
-      m = 41
-      n = 41
+      m = 40
+      n = 40
       mp = m-1
       np = n-1
     
-      xl = 1.e-3
-      yl = 1.e-3
+      xl = 3.9e-1
+      yl = 3.9e-1
       dx = xl/mp
       dy = yl/np
       
      
-         ntotal = (mp-1)*(np-1)
-        do i = 1, mp-1
-	   do j = 1, np-1
-	      k = j + (i-1)*(np-1)
-	      x(1, k) = i*dx
-	      x(2, k) = j*dy
-          enddo
+      ntotal = mp*np
+c      print *,ntotal
+      do i = 1, mp
+	  do j = 1, np
+	      k = j + (i-1)*np
+	      x(1, k) = (i-1)*dx+dx/2
+	      x(2, k) = (j-1)*dy+dy/2
          enddo
+      enddo
     
 
       do i = 1, ntotal
        	vx(1, i) = 0.
 	  vx(2, i) = 0.     
 c--- original density,pressure & mass of the particles    
-c        p(i) = 0
+        p(i) = 0
         if (mirror) p(i)=9.8*1000*(1.e-3-x(2,i))
 c        rho(i)= 1000*(p(i)/20+1)**(1/7)
         rho(i) = 1000   
@@ -132,9 +133,6 @@ c        rho(i)= 1000*(p(i)/20+1)**(1/7)
         u(i)=357.1
         itype(i) = 2
         hsml(i) = 1.3*dx
-             
-      
-     
       enddo  
 
       end	 

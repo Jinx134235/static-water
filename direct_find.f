@@ -1,5 +1,5 @@
-      subroutine direct_find(itimestep,ntotal,hsml,x,niac,pair_i,
-     &           pair_j,w,dwdx,countiac)
+      subroutine direct_find(itimestep,ntotal,nvirt,hsml,x,niac,pair_i,
+     &    pair_j,w,dwdx,countiac)
 
 c----------------------------------------------------------------------
 c   Subroutine to calculate the smoothing funciton for each particle and
@@ -22,13 +22,15 @@ c     countiac  : Number of neighboring particles                  [out]
       implicit none
       include 'param.inc'
       
+
       integer itimestep, ntotal,niac,pair_i(max_interaction),
-     &        pair_j(max_interaction), countiac(maxn)
+     &        pair_j(max_interaction), countiac(maxn),nvirt
       double precision hsml(maxn), x(dim,maxn), w(max_interaction),
      &       dwdx(dim,max_interaction)
       integer i, j, d,  sumiac, maxiac, miniac, noiac,
      &        maxp, minp, scale_k 
-      double precision dxiac(dim), driac, r, mhsml, tdwdx(dim)     
+      double precision dxiac(dim), driac, r, mhsml, tdwdx(dim)
+c      common nvirt     
 c     Smoothing kernel function 
 c     skf = 1, cubic spline kernel by W4 - Spline (Monaghan 1985)
 c         = 2, Gauss kernel   (Gingold and Monaghan 1981) 
@@ -40,15 +42,21 @@ c         = 3, Quintic kernel (Morris 1997)
       else if (skf.eq.3) then 
         scale_k = 3 
       endif 
-     
-      do i=1,ntotal
+       
+c      open(1,file="../data/xv_vp.dat")
+c      read(1,*) nvirt
+c      close(1)
+c
+c      print *,nvirt
+      do i=1,ntotal+nvirt
         countiac(i) = 0
       enddo
       
       niac = 0
+c      nvirt = 503
 
-      do i=1,ntotal-1     
-        do j = i+1, ntotal
+      do i=1,ntotal+nvirt-1     
+        do j = i+1, ntotal+nvirt
           dxiac(1) = x(1,i) - x(1,j)
           driac    = dxiac(1)*dxiac(1)
           do d=2,dim

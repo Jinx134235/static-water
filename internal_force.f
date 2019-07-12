@@ -9,7 +9,7 @@ c   Moreover the entropy production due to viscous dissipation, tds/dt,
 c   and the change of internal energy per mass, de/dt, are calculated. 
  
 c     itimestep: Current timestep number                            [in]
-c     dt     :   Time step                                          [in]
+c     dt     : Time step                                          [in]
 c     ntotal : Number of particles                                  [in]
 c     hsml   : Smoothing Length                                     [in]
 c     mass   : Particle masses                                      [in]
@@ -41,14 +41,15 @@ c     dedt   : Change of specific internal energy                  [out]
      &       rho(maxn), eta(maxn), dwdx(3,max_interaction), u(maxn),
      &       x(dim,maxn), t(maxn), c(maxn), p(maxn), dvxdt(dim,maxn),          
      &       tdsdt(maxn),dedt(maxn),wi(maxn),hv(dim),selfdens,
-     &       w(max_interaction), height
+     &       w(max_interaction),grap(maxn)
       integer i, j, k, d
-      double precision  dvx(3), txx(maxn), tyy(maxn),
-     &       tzz(maxn), txy(maxn), txz(maxn), tyz(maxn), vcc(maxn),
+      double precision  dvx(3), txx(maxn), tyy(maxn), tzz(maxn),
+     &       txy(maxn), txz(maxn), tyz(maxn), vcc(maxn),
      &       hxx, hyy, hzz, hxy, hxz, hyz, h, hvcc, he, rhoij, r
 
 c     Initialization of shear tensor, velocity divergence, 
 c     viscous energy, internal energy, acceleration 
+c      print *,ntotal
 
       do i=1,ntotal      
         txx(i) = 0.e0
@@ -148,6 +149,8 @@ c     Viscous entropy Tds/dt = 1/2 eta/rho Tab Tab
           endif   
           tdsdt(i) = 0.5e0*eta(i)/rho(i)*tdsdt(i)
         endif  
+
+c        call p_art_water(rho(i),x(2,i),p(i),c(i))
       enddo
 
 c      Calculate SPH sum for pressure force -p,a/rho
@@ -185,26 +188,83 @@ c             dedt(i) = dedt(i) + mass(j)*he
 c             dedt(j) = dedt(j) + mass(i)*he                  
 c            else
            
-        if(pa_sph.eq.1) then
-          call dividition(rho, dwdx, eta, mass,p,vx, txx, txy, tyz, 
-     &    tyy, txz, tzz,dvxdt, dedt)
-        else
-          call plusition(rho, dwdx, eta, mass,p,vx, txx, txy, tyz, 
-     &    tyy, txz, tzz,dvxdt, dedt)
-        endif
+c      if(pa_sph.eq.1) then
+c       call dividition(rho, dwdx,pair_i,pair_j, eta, mass,p,vx, txx,  
+c     &   txy, tyz, tyy, txz, tzz,dvxdt, dedt)
+c        else
+      do k=1,niac
+           i = pair_i(k)
+           j = pair_j(k)
+c          print *,i,j
+           he = 0.e0
+          do d=1,dim                
+            h = -(p(i)/rho(i)**2 + p(j)/rho(j)**2)*dwdx(d,k) 
+c            print *,h
+            he = he + (vx(d,j) - vx(d,i))*h
+
+c     Viscous force
+
+          if (visc) then             
+             if (d.eq.1) then
+                       
+c     x-coordinate of acceleration
+
+               h = h + (eta(i)*txx(i)/rho(i)**2 +
+     &                  eta(j)*txx(j)/rho(j)**2)*dwdx(1,k)
+               if (dim.ge.2) then
+                 h = h + (eta(i)*txy(i)/rho(i)**2 + 
+     &                    eta(j)*txy(j)/rho(j)**2)*dwdx(2,k)
+                 if (dim.eq.3) then
+                   h = h + (eta(i)*txz(i)/rho(i)**2 + 
+     &                      eta(j)*txz(j)/rho(j)**2)*dwdx(3,k)
+                 endif
+               endif            
+             elseif (d.eq.2) then
+            
+c     y-coordinate of acceleration
+
+               h = h + (eta(i)*txy(i)/rho(i)**2  
+     &               +  eta(j)*txy(j)/rho(j)**2)*dwdx(1,k)
+     &               + (eta(i)*tyy(i)/rho(i)**2  
+     &               +  eta(j)*tyy(j)/rho(j)**2)*dwdx(2,k)
+               if (dim.eq.3) then
+                 h = h + (eta(i)*tyz(i)/rho(i)**2  
+     &                 +  eta(j)*tyz(j)/rho(j)**2)*dwdx(3,k)
+               endif              
+             elseif (d.eq.3) then
+            
+c     z-coordinate of acceleration
+
+               h = h + (eta(i)*txz(i)/rho(i)**2 + 
+     &                  eta(j)*txz(j)/rho(j)**2)*dwdx(1,k)
+     &               + (eta(i)*tyz(i)/rho(i)**2 + 
+     &                  eta(j)*tyz(j)/rho(j)**2)*dwdx(2,k)
+     &               + (eta(i)*tzz(i)/rho(i)**2 + 
+     &                  eta(j)*tzz(j)/rho(j)**2)*dwdx(3,k)            
+             endif            
+           endif              
+           dvxdt(d,i) = dvxdt(d,i) + mass(j)*h
+           dvxdt(d,j) = dvxdt(d,j) - mass(i)*h
+          enddo
+          dedt(i) = dedt(i) + mass(j)*he
+          dedt(j) = dedt(j) + mass(i)*he       
+        enddo
+c      endif
       
    
 c     Change of specific internal energy de/dt = T ds/dt - p/rho vc,c:
 
       do i=1,ntotal
+         grap(i) = dvxdt(dim,i)*rho(i)
          dedt(i) = tdsdt(i) + 0.5e0*dedt(i)
+c       print *,i, grap(i)
       enddo
 
       end
 
 c----------------------------------------------------------------------
-      subroutine dividition(rho, dwdx, eta, mass,p, vx, txx, txy, tyz, 
-     &    tyy, txz, tzz,dvxdt, dedt)
+      subroutine dividition(rho, dwdx,pair_i, pair_j, eta, mass,p, vx,
+     &    txx, txy, tyz, tyy, txz, tzz,dvxdt, dedt)
 
       implicit none
       include 'param.inc'
@@ -260,23 +320,24 @@ c----------------------------------------------------------------------
 
 
       end
-c-------------------------------------------------------------------------
-      subroutine plusition(rho, dwdx, eta, mass,p,vx, txx, txy,tyz,tyy, 
-     &    txz, tzz,dvxdt, dedt)
+
+c----------------------------------------------------------------------
+      subroutine plusition(rho, dwdx,pair_i, pair_j, eta, mass,p, vx,
+     &    txx, txy, tyz, tyy, txz, tzz,dvxdt, dedt)
 
       implicit none
       include 'param.inc'
       double precision rho(maxn),dwdx(3,max_interaction),vx(dim,maxn),
      &               mass(maxn),txx(maxn),txy(maxn),tyy(maxn),tyz(maxn),
      &               txz(maxn),tzz(maxn),dvxdt(dim,maxn),dedt(maxn),
-     &               h, he,eta(maxn),p(maxn)
-      integer i,j,k,d,niac,pair_i(max_interaction),
-     &          pair_j(max_interaction)
+     &               h, he, rhoij,eta(maxn),p(maxn)
+      integer i,j,k,d,niac,ntotal,pair_i(max_interaction),
+     &         pair_j(max_interaction)
 
       do k=1,niac
            i = pair_i(k)
            j = pair_j(k)
-c           print *,i,j
+c          print *,i,j
            he = 0.e0
           do d=1,dim                
             h = -(p(i)/rho(i)**2 + p(j)/rho(j)**2)*dwdx(d,k) 
@@ -285,7 +346,7 @@ c            print *,h
 
 c     Viscous force
 
-            if (visc) then             
+          if (visc) then             
              if (d.eq.1) then
                        
 c     x-coordinate of acceleration
@@ -331,5 +392,8 @@ c     z-coordinate of acceleration
           dedt(j) = dedt(j) + mass(i)*he       
         enddo
 
-        end
+c       do i=1,ntotal
+         
+c        enddo
 
+        end

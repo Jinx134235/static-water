@@ -1,4 +1,4 @@
-      subroutine grid_geom(i,x,ngridx,maxgridx,mingridx,dgeomx,xgcell)
+      subroutine grid_geom(i,x,hsml,scale_k,maxgridx,mingridx,xgcell)
 
 c----------------------------------------------------------------------
 c   Subroutine to calculate the coordinates (xgcell) of the cell of 
@@ -14,14 +14,17 @@ c     xgcell   : x-, y- and z-coordinte of sorting grid cell       [out]
       implicit none
       include 'param.inc'
 
-      integer i, ngridx(dim),xgcell(3)
-      double precision x(dim), maxgridx(dim), mingridx(dim), dgeomx(dim)
+      integer i,xgcell(3), scale_k
+      double precision x(dim), maxgridx(dim), mingridx(dim),
+     &    cll, hsml
       integer d
 
       do d=1,3
         xgcell(d) = 1
       enddo
 
+      cll = scale_k*hsml
+c     print *,cll
       do d=1,dim
         if ((x(d).gt.maxgridx(d)).or.(x(d).lt.mingridx(d))) then
           print *,' >>> ERROR <<< : Particle out of range'
@@ -30,8 +33,7 @@ c     xgcell   : x-, y- and z-coordinte of sorting grid cell       [out]
      &         [',mingridx(d),',',maxgridx(d),']'
           stop
         else
-          xgcell(d) = int(real(ngridx(d))/dgeomx(d)*
-     &         (x(d)-mingridx(d)) + 1.e0)
+          xgcell(d) = int((x(d)-mingridx(d))/cll + 1.e0)
         endif
       enddo
 
