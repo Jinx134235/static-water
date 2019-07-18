@@ -10,6 +10,7 @@ c     c      : sound velocity                                      [out]
 c     Equation of state for artificial compressibility   
 
       implicit none
+      include 'param.inc'
       double precision rho, u, p, c, b, h
       double precision gamma, rho0
 
@@ -17,7 +18,7 @@ c     Artificial EOS, Form 1 (Monaghan, 1994)
 c     See Equ.(4.88)
        gamma=7.
        rho0=1000.       
-       c = 15*sqrt(9.8*1.e-3)
+       c = 15*sqrt(9.8*(y_maxgeom-y_mingeom))
        b = c**2*rho0/gamma 
        p = b*((rho/rho0)**gamma-1)      
 c       print *,p

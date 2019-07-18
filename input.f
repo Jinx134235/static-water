@@ -103,9 +103,8 @@ c     ntotal-- total particle number                               [out]
       n = 40
       mp = m-1
       np = n-1
-    
-      xl = 3.9e-1
-      yl = 3.9e-1
+      xl = x_maxgeom-x_mingeom
+      yl = y_maxgeom-y_mingeom
       dx = xl/mp
       dy = yl/np
       
@@ -115,8 +114,8 @@ c      print *,ntotal
       do i = 1, mp
 	  do j = 1, np
 	      k = j + (i-1)*np
-	      x(1, k) = (i-1)*dx+dx/2
-	      x(2, k) = (j-1)*dy+dy/2
+	      x(1, k) = (i-1)*dx+dx/2+x_mingeom
+	      x(2, k) = (j-1)*dy+dy/2+y_mingeom
          enddo
       enddo
     
@@ -126,7 +125,7 @@ c      print *,ntotal
 	  vx(2, i) = 0.     
 c--- original density,pressure & mass of the particles    
         p(i) = 0
-        if (mirror) p(i)=9.8*1000*(1.e-3-x(2,i))
+c        if (mirror) p(i)=9.8*1000*(yl-x(2,i))
 c        rho(i)= 1000*(p(i)/20+1)**(1/7)
         rho(i) = 1000   
         mass(i) = dx*dy*rho(i)  

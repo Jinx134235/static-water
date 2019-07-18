@@ -1,5 +1,5 @@
-      subroutine int_force(itimestep,dt,ntotal,hsml,mass,vx,niac,rho,
-     &        eta,pair_i,pair_j,dwdx,u,itype,x,t,c,p,dvxdt,tdsdt,dedt)
+      subroutine int_force(itimestep,dt,ntotal,nvirt,hsml,mass,vx,niac,
+     &      rho,eta,pair_i,pair_j,dwdx,u,itype,x,t,c,p,dvxdt,tdsdt,dedt)
 
 c----------------------------------------------------------------------
 c   Subroutine to calculate the internal forces on the right hand side 
@@ -9,7 +9,7 @@ c   Moreover the entropy production due to viscous dissipation, tds/dt,
 c   and the change of internal energy per mass, de/dt, are calculated. 
  
 c     itimestep: Current timestep number                            [in]
-c     dt     : Time step                                          [in]
+c     dt     : Time step                                            [in]
 c     ntotal : Number of particles                                  [in]
 c     hsml   : Smoothing Length                                     [in]
 c     mass   : Particle masses                                      [in]
@@ -36,7 +36,7 @@ c     dedt   : Change of specific internal energy                  [out]
       
      
       integer itimestep, ntotal,niac,pair_i(max_interaction),
-     &        pair_j(max_interaction), itype(maxn) 
+     &        pair_j(max_interaction), itype(maxn),nvirt 
       double precision dt, hsml(maxn), mass(maxn), vx(dim,maxn),      
      &       rho(maxn), eta(maxn), dwdx(3,max_interaction), u(maxn),
      &       x(dim,maxn), t(maxn), c(maxn), p(maxn), dvxdt(dim,maxn),          
@@ -152,6 +152,10 @@ c     Viscous entropy Tds/dt = 1/2 eta/rho Tab Tab
 
 c        call p_art_water(rho(i),x(2,i),p(i),c(i))
       enddo
+      do i = 1,ntotal+nvirt
+         call p_art_water(rho(i),x(2,i),c(i),p(i))
+      enddo
+
 
 c      Calculate SPH sum for pressure force -p,a/rho
 c      and viscous force (eta Tab),b/rho

@@ -63,9 +63,10 @@ c     Initialize grid:
      &     maxgridx,mingridx,dgeomx)
       
 c     Position particles on grid and create linked list:
-      
+c      print *,x(1,i)
       do i=1,ntotal
-        call grid_geom(i,x(1,i),hsml,scale_k,maxgridx,mingridx,gcell)
+        call grid_geom(i,x(1,i),hsml,scale_k,maxgridx,mingridx,gcell,
+     &    itimestep)
         do d=1,dim
           xgcell(d,i) = gcell(d)
 c          if (i.eq.1) print *,xgcell(d,i)
@@ -123,7 +124,7 @@ C--- Kernel and derivations of kernel
                     call kernel(r,dx,hsml,w(niac),tdwdx)
                   do d = 1, dim
 	              dwdx(d,niac)=tdwdx(d)
-                    enddo                  
+                  enddo                   
                   else
                     print *,
      &              ' >>> Error <<< : too many interactions'
@@ -137,6 +138,10 @@ C--- Kernel and derivations of kernel
           enddo
         enddo
       enddo
+
+c      do i =1,50
+c        print *, pair_i(i),pair_j(i),dwdx(dim,i)
+c        enddo
 
 c     Statistics for the interaction
 

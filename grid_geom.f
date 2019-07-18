@@ -1,4 +1,5 @@
-      subroutine grid_geom(i,x,hsml,scale_k,maxgridx,mingridx,xgcell)
+      subroutine grid_geom(i,x,hsml,scale_k,maxgridx,mingridx,xgcell,
+     &             itimestep)
 
 c----------------------------------------------------------------------
 c   Subroutine to calculate the coordinates (xgcell) of the cell of 
@@ -14,7 +15,7 @@ c     xgcell   : x-, y- and z-coordinte of sorting grid cell       [out]
       implicit none
       include 'param.inc'
 
-      integer i,xgcell(3), scale_k
+      integer i,xgcell(3), scale_k, itimestep
       double precision x(dim), maxgridx(dim), mingridx(dim),
      &    cll, hsml
       integer d
@@ -31,6 +32,7 @@ c     print *,cll
           print *,'    Particle position: x(',i,d,') = ',x(d)
           print *,'    Range: [xmin,xmax](',D,') = 
      &         [',mingridx(d),',',maxgridx(d),']'
+          print *,'current timestep:', itimestep
           stop
         else
           xgcell(d) = int((x(d)-mingridx(d))/cll + 1.e0)

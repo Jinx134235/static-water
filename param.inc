@@ -22,10 +22,10 @@ c     z_maxgeom : Upper limit of allowed z-regime
 c     z_mingeom : Lower limit of allowed z-regime 
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom
-      parameter ( x_maxgeom =  0.39e0     ,
-     &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  0.39e0     ,
-     &            y_mingeom =  0.e0     ,
+      parameter ( x_maxgeom =  0.195e0     ,
+     &            x_mingeom =  -0.195e0     ,
+     &            y_maxgeom =  0.195e0     ,
+     &            y_mingeom =  -0.195e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     )
     
@@ -33,7 +33,7 @@ c     SPH algorithm for particle approximation (pa_sph)
 c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
 c              2 : (e.g. (p(i)/rho(i)**2+p(j)/rho(j)**2)
       integer pa_sph 
-      parameter(pa_sph = 1)
+      parameter(pa_sph = 2)
 
 c     Nearest neighbor particle searching (nnps) method
 c     nnps = 1 : Simplest and direct searching
@@ -92,7 +92,7 @@ c     mirror = .ture. : add mirror particles to boundary
      &        mirror
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .true. )
+      parameter ( average_velocity  = .false. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
@@ -121,8 +121,8 @@ c     moni_particle: The particle number for information monitoring.
       logical int_stat
       parameter ( int_stat = .true. )
       integer print_step, save_step, moni_particle
-      parameter ( print_step = 100,
-     &            save_step = 100,
+      parameter ( print_step = 1,
+     &            save_step = 1,
      &            moni_particle = 1600   )
            
       double precision pi
