@@ -35,8 +35,8 @@ c     3-dim. problem: maxngx = maxngy = maxngz ~ maxn^(1/3)
      &            maxngz  = 1          )      
       integer itimestep, ntotal, niac, pair_i(max_interaction),
      &        pair_j(max_interaction), countiac(maxn)
-      double precision hsml, x(dim,maxn),w(max_interaction),
-     &       dwdx(dim,max_interaction),sumw
+      double precision hsml, x(dim,maxn),w(max_interaction), sumw
+      double precision :: dwdx(3,max_interaction)
       integer i, j, d, scale_k, sumiac, maxiac, noiac, miniac, maxp,minp    
       integer grid(maxngx,maxngy,maxngz),xgcell(3,maxn),gcell(3),
      &     xcell,ycell,zcell,celldata(maxn),minxcell(3),maxxcell(3),
@@ -75,7 +75,7 @@ c          if (i.eq.1) print *,xgcell(d,i)
         celldata(i) = grid(gcell(1),gcell(2),gcell(3))
         grid(gcell(1),gcell(2),gcell(3)) = i
       enddo
-c      print *,grid(1,8,1)
+c      print *,celldata(1618)
 c     Determine interaction parameters:
 
       niac = 0
@@ -92,6 +92,8 @@ c     Determine range of grid to go through:
           minxcell(d) = max(dnxgcell(d),1)
           maxxcell(d) = min(dpxgcell(d),ngridx(d))
         enddo
+
+c        if (i.eq.1) print *,minxcell,maxxcell
 
 c     Search grid:
       
@@ -120,11 +122,17 @@ c     the interaction number for each particle
                     countiac(j) = countiac(j) + 1
                            
 C--- Kernel and derivations of kernel
-
+ 
                     call kernel(r,dx,hsml,w(niac),tdwdx)
+c                  if (niac.eq.3) print *,tdwdx  
                   do d = 1, dim
 	              dwdx(d,niac)=tdwdx(d)
-                  enddo                   
+c                    if (niac.le.2) print *,d 
+                  enddo       
+c                   if(niac.le.44)then 
+c                   print *,niac,dwdx(1,niac),dwdx(2,niac)
+c                   print *,pair_i(niac),pair_j(niac)            
+c                  endif
                   else
                     print *,
      &              ' >>> Error <<< : too many interactions'
@@ -138,10 +146,10 @@ C--- Kernel and derivations of kernel
           enddo
         enddo
       enddo
-
+c
 c      do i =1,50
 c        print *, pair_i(i),pair_j(i),dwdx(dim,i)
-c        enddo
+c      enddo
 
 c     Statistics for the interaction
 

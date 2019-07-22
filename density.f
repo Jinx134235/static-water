@@ -126,7 +126,7 @@ c     norrho : normalized density of all particles                 [out]
 
       integer ntotal,niac,pair_i(max_interaction),
      &        pair_j(max_interaction), itype(maxn)    
-      double precision mass(maxn), dwdx(dim,max_interaction),
+      double precision mass(maxn), dwdx(3,max_interaction),
      &       vx(dim,maxn), x(dim,maxn), rho(maxn), drhodt(maxn),
      &       hsml(maxn),w(max_interaction)
       integer i,j,k,d    
@@ -134,8 +134,6 @@ c     norrho : normalized density of all particles                 [out]
      &       selfdens, wi(maxn)
 c      real wi(maxn)
 
-      open(1, file="../data/kernel.dat")
-    
       do d=1,dim
         hv(d) = 0.e0
       enddo
@@ -162,14 +160,16 @@ c        if (pair_i(k).eq.1) print *, pair_j(k)
          wi(j) = wi(j) + mass(i)/rho(i)*w(k)
        
       enddo
-
+      
+      open(1, file="../data/kernel.dat")
+    
       do i = 1,ntotal
          write (1,1001) i,wi(i)
        enddo
  1001     format(2x, I4, 2x, e14.8)
       close(1)
 c  check normalization condition
-      do i=1,ntotal
+c      do i=1,ntotal
 c       if (i.eq.moni_particle) print *,'wi(1600):',wi(moni_particle)
 c         if (i.le.120) print *,i,wi(i)
 c         if (abs(1-wi(i)).gt.1.e-2) then
@@ -177,7 +177,7 @@ c             print *,
 c     &          ' >>> Error <<< : normalization condition unsatisfied'
 c              stop
 c         endif
-      enddo
+c      enddo
 
 c     Secondly calculate the rho integration over the space
 

@@ -121,8 +121,8 @@ c     moni_particle: The particle number for information monitoring.
       logical int_stat
       parameter ( int_stat = .true. )
       integer print_step, save_step, moni_particle
-      parameter ( print_step = 1,
-     &            save_step = 1,
+      parameter ( print_step = 100,
+     &            save_step = 500,
      &            moni_particle = 1600   )
            
       double precision pi

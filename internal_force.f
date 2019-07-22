@@ -152,9 +152,7 @@ c     Viscous entropy Tds/dt = 1/2 eta/rho Tab Tab
 
 c        call p_art_water(rho(i),x(2,i),p(i),c(i))
       enddo
-      do i = 1,ntotal+nvirt
-         call p_art_water(rho(i),x(2,i),c(i),p(i))
-      enddo
+   
 
 
 c      Calculate SPH sum for pressure force -p,a/rho
@@ -203,7 +201,7 @@ c          print *,i,j
            he = 0.e0
           do d=1,dim                
             h = -(p(i)/rho(i)**2 + p(j)/rho(j)**2)*dwdx(d,k) 
-c            print *,h
+  
             he = he + (vx(d,j) - vx(d,i))*h
 
 c     Viscous force

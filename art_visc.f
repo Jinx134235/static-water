@@ -27,7 +27,7 @@ c     dedt   : Change of specific internal energy                  [out]
      &        pair_j(max_interaction)            
       double precision hsml(maxn), mass(maxn), x(dim,maxn),vx(dim,maxn),
      &       rho(maxn), c(maxn), w(max_interaction),
-     &       dwdx(dim,max_interaction), dvxdt(dim,maxn), dedt(maxn)
+     &       dwdx(3,max_interaction), dvxdt(dim,maxn), dedt(maxn)
       integer i,j,k,d
       double precision dx, dvx(dim), alpha, beta, etq, piv,
      &       muv, vr, rr, h, mc, mrho, mhsml

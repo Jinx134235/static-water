@@ -66,9 +66,9 @@ c      nvirt=0
          call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
 c        print *,"after virt_part"
-c        print *,x(2,ntotal+1)
+c        print *,nvirt 
        open(1,file="../data/ini_virt.dat")
-      
+c         write(4,*) nvirt
         do i = ntotal+1, ntotal+nvirt 
 c         if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.x_mingeom) then
 c           p(i) = p(mother(i))+2*9.8*1000*(y_mingeom-x(2,i))
@@ -85,11 +85,11 @@ c          endif
       
 c---  Interaction parameters, calculating neighboring particles
 c     and optimzing smoothing length
-c      open(1,file="../data/xv_vp.dat")
-c      read(1,*) nvirt
-c      close(1)
+      open(1,file="../data/xv_vp.dat")
+      read(1,*) nvirt
+      close(1)
       ntotalvirt = ntotal + nvirt
-c     print *,nvirt
+c      print *,nvirt
 c      print *,"before nps"
 c      print *,x(2,ntotal+1)
 
@@ -105,7 +105,9 @@ c---   else if (nnps.eq.3) then
 c       call tree_search(itimestep, ntotal+nvirt,hsml,x,niac,pair_i,
 c     &       pair_j,w,dwdx,ns)
       endif         
-                        
+c      do k=1,50                 
+c         print *,k,dwdx(dim,k),pair_i(k),pair_j(k)
+c      enddo
 c---  Density approximation or change rate
 c---  summation_density:(4.26)
 c---  con_density: calculting density through continuity equation (4.31)/(4.34)      
@@ -122,9 +124,16 @@ c      enddo
       endif
        do i = 1,ntotal              
 c          if(mod(i,39).le.10.and.i.lt.ntotal) print *,i,drho(i)
-           rho(i) = rho(i) + dt*drho(i)	    
+             rho(i) = rho(i) + dt*drho(i)	 
+             call p_art_water(rho(i),x(2,i),c(i),p(i))   
 c           p(i)=p(i)+9.8*1000*(y_maxgeom-x(2,i))
 c          if (p(i).lt.0) p(i)=0
+      enddo
+c      print *,hsml(1)
+
+      do i = ntotal+1, ntotal+nvirt
+           p(i) = p(mother(i))
+           rho(i) = rho(mother(i))
       enddo
 
       if(dynamic) then
@@ -186,7 +195,7 @@ c          print *,indvxdt(dim,i)
 c          dvx(1,i)=0
           dvx(d,i) = indvxdt(d,i) + exdvxdt(d,i) + ardvxdt(d,i)          
         enddo
-c        if(mod(i,39).eq.1) print*,indvxdt(1,i),ardvxdt(1,i),dvx(1,i)
+c        if(mod(i,39).eq.1) print*,indvxdt(1,i),p(i),rho(i)
 c         if(i.eq.1) print*,indvxdt(2,i),ardvxdt(2,i)
 c        gravity
         if (self_gravity) then
@@ -220,18 +229,6 @@ c            endif
 c   update velocity of the mirror particles
        call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
-c          print *,"after virt_part"
-c         print *,p(ntotal+1)
-c   update density & pressure
-c       print *,p(1)
-     
-     
-     
-c      call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
-c     &       rho,u,p,itype, nwall)
-c   correct pressure for mirror particle
-c      
-c      b=1.2285e+05
         
       do i = 1,nvirt
            p(ntotal + i) = p(mother(ntotal + i))

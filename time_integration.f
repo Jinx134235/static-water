@@ -25,14 +25,14 @@ c      dt-- timestep                                             [input]
       include 'param.inc'
       
       integer itype(maxn), ntotal, maxtimestep, niac
-      double precision x(3, maxn), vx(3, maxn), mass(maxn), 
+      double precision x(dim, maxn), vx(dim, maxn), mass(maxn), 
      &       rho(maxn), p(maxn), u(maxn), c(maxn), s(maxn), e(maxn), 
      &       hsml(maxn), dt
       integer i, j, k, im,itimestep, d, current_ts, nstart, nvirt,
      &      pair_i(max_interaction),   pair_j(max_interaction)       
       double precision  x_min(dim, maxn), v_min(dim, maxn), u_min(maxn),
-     &       rho_min(maxn), dx(3,maxn), dvx(3, maxn), du(maxn),  
-     &       drho(maxn),  av(3, maxn), ds(maxn),
+     &       rho_min(maxn), dx(dim,maxn), dvx(dim, maxn), du(maxn),  
+     &       drho(maxn),  av(dim, maxn), ds(maxn),
      &       t(maxn), tdsdt(maxn), temp_u, temp_rho 
       double precision  time
 c      common nvirt
@@ -48,10 +48,11 @@ c      nvirt = 0
       do itimestep = nstart+1, nstart+maxtimestep   
 	   
         current_ts=current_ts+1
+        time=current_ts*dt
         if (mod(itimestep,print_step).eq.0) then
          write(*,*)'______________________________________________'
          write(*,*)'  current number of time step =',
-     &           itimestep,'     current time=', real(time+dt)
+     &           itimestep,'     current time=', real(time)
          write(*,*)'______________________________________________'
         endif      
        
@@ -74,7 +75,13 @@ c        endif
      &         p(ntotal+i))
             enddo
          endif
-            
+      
+c---  Judge if the system achieves the balancing point      
+c      if  (abs(p(1)-9.8e3*(y_maxgeom-x(2,1))).le.10) then
+c           print *,p(1)
+c           print *,current_ts    
+c           stop
+c      endif
         time = time + dt
 
 	if (mod(itimestep,save_step).eq.0) then

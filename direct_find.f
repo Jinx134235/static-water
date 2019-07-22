@@ -26,7 +26,7 @@ c     countiac  : Number of neighboring particles                  [out]
       integer itimestep, ntotal,niac,pair_i(max_interaction),
      &        pair_j(max_interaction), countiac(maxn),nvirt
       double precision hsml(maxn), x(dim,maxn), w(max_interaction),
-     &       dwdx(dim,max_interaction)
+     &       dwdx(3,max_interaction)
       integer i, j, d,  sumiac, maxiac, miniac, noiac,
      &        maxp, minp, scale_k 
       double precision dxiac(dim), driac, r, mhsml, tdwdx(dim)
