@@ -265,7 +265,6 @@ c             print *,p(ntotal+i)
 
 
       if (mod(itimestep,print_step).eq.0) then      
-          write(*,*)
           write(*,*) '**** particle moving fastest ****', maxi         
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
           write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)

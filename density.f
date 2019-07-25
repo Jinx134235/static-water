@@ -187,7 +187,7 @@ c     Secondly calculate the rho integration over the space
         drhodt(i) = 0.
       enddo
      
-      delta  = 0.01
+      delta  = 0.1
       c = 29.32
       do k=1,niac      
         i = pair_i(k)
@@ -210,11 +210,12 @@ c     Secondly calculate the rho integration over the space
         drhodt(j) = drhodt(j) + mass(i)*vcc
 c  add filter to the continuity equation(Molteni,2009)
         if (filt_density) then
+c              if (i.eq.123)print *,"before filter:",drhodt(i)      
           drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
-
+c              if (i.eq.123)print *,"after filtered:",drhodt(i)
           drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
         endif
        enddo    
     
-       print *,"after filtered" ,drhodt(1)
+c       print *,"after filtered" ,drhodt(1)
       end
