@@ -35,8 +35,8 @@ c     3-dim. problem: maxngx = maxngy = maxngz ~ maxn^(1/3)
      &            maxngz  = 1          )      
       integer itimestep, ntotal, niac, pair_i(max_interaction),
      &        pair_j(max_interaction), countiac(maxn)
-      double precision hsml, x(dim,maxn),w(max_interaction), sumw
-      double precision :: dwdx(3,max_interaction)
+      double precision hsml, x(dim,maxn),w(max_interaction), sumw,
+     &        dwdx(3,max_interaction) 
       integer i, j, d, scale_k, sumiac, maxiac, noiac, miniac, maxp,minp    
       integer grid(maxngx,maxngy,maxngz),xgcell(3,maxn),gcell(3),
      &     xcell,ycell,zcell,celldata(maxn),minxcell(3),maxxcell(3),
@@ -63,13 +63,13 @@ c     Initialize grid:
      &     maxgridx,mingridx,dgeomx)
       
 c     Position particles on grid and create linked list:
-c      print *,x(1,i)
       do i=1,ntotal
-        call grid_geom(i,x(1,i),hsml,scale_k,maxgridx,mingridx,gcell,
-     &    itimestep)
+        if (i.eq.1)print *,x(1,i)
+        call grid_geom(i,x(1:dim,i),hsml,scale_k,maxgridx,mingridx,
+     &    gcell, itimestep)
         do d=1,dim
           xgcell(d,i) = gcell(d)
-c          if (i.eq.1) print *,xgcell(d,i)
+         if (i.eq.1) print *,xgcell(d,i)
         enddo
 
         celldata(i) = grid(gcell(1),gcell(2),gcell(3))
@@ -93,7 +93,7 @@ c     Determine range of grid to go through:
           maxxcell(d) = min(dpxgcell(d),ngridx(d))
         enddo
 
-c        if (i.eq.1) print *,minxcell,maxxcell
+c      if (i.eq.1) print *,minxcell,maxxcell
 
 c     Search grid:
       
@@ -120,7 +120,7 @@ c     the interaction number for each particle
                     r = sqrt(dr)
                     countiac(i) = countiac(i) + 1
                     countiac(j) = countiac(j) + 1
-                           
+                          
 C--- Kernel and derivations of kernel
  
                     call kernel(r,dx,hsml,w(niac),tdwdx)

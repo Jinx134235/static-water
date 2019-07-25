@@ -128,10 +128,10 @@ c     norrho : normalized density of all particles                 [out]
      &        pair_j(max_interaction), itype(maxn)    
       double precision mass(maxn), dwdx(3,max_interaction),
      &       vx(dim,maxn), x(dim,maxn), rho(maxn), drhodt(maxn),
-     &       hsml(maxn),w(max_interaction)
+     &       hsml(maxn), w(max_interaction)
       integer i,j,k,d    
-      double precision   vcc, dvx(dim),delta, phi, r,c, dx(dim),hv(dim),
-     &       selfdens, wi(maxn)
+      double precision   vcc, dvx(dim),delta, r,c, dx(dim),hv(dim),
+     &       selfdens, wi(maxn),psi(dim), xcc
 c      real wi(maxn)
 
       do d=1,dim
@@ -144,7 +144,7 @@ c     and take contribution of particle itself:
       r=0.
       
 c     Firstly calculate the integration of the kernel over the space
-
+c     checking the normalization condition 
       do i=1,ntotal
         call kernel(r,hv,hsml(i),selfdens,hv)
         wi(i)=selfdens*mass(i)/rho(i)
@@ -168,6 +168,7 @@ c        if (pair_i(k).eq.1) print *, pair_j(k)
        enddo
  1001     format(2x, I4, 2x, e14.8)
       close(1)
+
 c  check normalization condition
 c      do i=1,ntotal
 c       if (i.eq.moni_particle) print *,'wi(1600):',wi(moni_particle)
@@ -186,19 +187,34 @@ c     Secondly calculate the rho integration over the space
         drhodt(i) = 0.
       enddo
      
+      delta  = 0.01
+      c = 29.32
       do k=1,niac      
         i = pair_i(k)
         j = pair_j(k)
         do d=1,dim
           dvx(d) = vx(d,i) - vx(d,j) 
-        enddo        
+          dx(d) = x(d,i) - x(d,j)
+          r = r+dx(d)**2
+        enddo
+        do d=1,dim
+          psi(d) = 2*(rho(j)-rho(i))*dx(d)/sqrt(r)
+        enddo  
         vcc = dvx(1)*dwdx(1,k) 
-
+        xcc = psi(1)*dwdx(1,k)
         do d=2,dim
           vcc = vcc + dvx(d)*dwdx(d,k)
+          xcc = xcc + psi(d)*dwdx(d,k)
         enddo    
         drhodt(i) = drhodt(i) + mass(j)*vcc
-        drhodt(j) = drhodt(j) + mass(i)*vcc       
-      enddo    
+        drhodt(j) = drhodt(j) + mass(i)*vcc
+c  add filter to the continuity equation(Molteni,2009)
+        if (filt_density) then
+          drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
 
+          drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
+        endif
+       enddo    
+    
+       print *,"after filtered" ,drhodt(1)
       end

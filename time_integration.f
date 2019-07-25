@@ -48,12 +48,12 @@ c      nvirt = 0
       do itimestep = nstart+1, nstart+maxtimestep   
 	   
         current_ts=current_ts+1
-        time=current_ts*dt
+c        time=current_ts*dt
         if (mod(itimestep,print_step).eq.0) then
          write(*,*)'______________________________________________'
          write(*,*)'  current number of time step =',
-     &           itimestep,'     current time=', real(time)
-         write(*,*)'______________________________________________'
+     &           itimestep,'     current time=', real(time+dt)
+         write(*,*)'_____________________________________________'
         endif      
        
 

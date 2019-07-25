@@ -39,6 +39,6 @@ c     print *,cll
         endif
       enddo
 
-c      print *,xgcell(2)
+c     print *,xgcell(2)
 
       end

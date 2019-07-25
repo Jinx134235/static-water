@@ -91,7 +91,7 @@ c     and optimzing smoothing length
       ntotalvirt = ntotal + nvirt
 c      print *,nvirt
 c      print *,"before nps"
-c      print *,x(2,ntotal+1)
+c      print *,x(1,1)
 
       if (nnps.eq.1) then 
         call direct_find(itimestep, ntotal,nvirt, hsml,x,niac,pair_i,
@@ -229,15 +229,17 @@ c            endif
 c   update velocity of the mirror particles
        call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
-        
-      do i = 1,nvirt
+
+c   pressure correction as well as density     
+       b = 1.2281e5
+       do i = 1,nvirt
            p(ntotal + i) = p(mother(ntotal + i))
            rho(ntotal + i) = rho(mother(ntotal + i))
           if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.x_mingeom) then
 c             print *,p(ntotal+i)
            p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
      &     (y_mingeom-x(2,ntotal+i))
-c            rho(ntotal + i)= p(ntotal+i)/(9.8*(y_maxgeom-x(2,ntotal+i)))
+           rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
           
            endif
       enddo

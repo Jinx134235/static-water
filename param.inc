@@ -82,14 +82,15 @@ c     self_gravity = .true. : Considering self_gravity,
 c                    .false.: No considering of self_gravity
 c     nor_density =  .true. : Density normalization by using CSPM,
 c                    .false.: No normalization.
-c     dynamic= .ture. : apply dynamic boundary into simulation,Crespo£¨2005£©
+c     dynamic= .true. : apply dynamic boundary into simulation,Crespo£¨2005£©
 c              . false.: Fixed virtual particles
-c     mirror = .ture. : add mirror particles to boundary                      
+c     mirror = .true.  :generate mirror particles
+c     filt_density = .true. : Applying density filter, Molteni,2009
 
       logical summation_density, average_velocity, config_input,
      &        virtual_part, vp_input, visc, ex_force, heat_artificial,
      &        visc_artificial, self_gravity, nor_density, dynamic,
-     &        mirror
+     &        mirror, filt_density
 
       parameter ( summation_density  = .false. )
       parameter ( average_velocity  = .false. )
@@ -102,8 +103,9 @@ c     mirror = .ture. : add mirror particles to boundary
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
       parameter ( nor_density  = .true. )      
-	  parameter ( dynamic = .false. )
-	  parameter ( mirror = .true. )
+      parameter ( filt_density = .true. )
+      parameter ( dynamic = .false. )
+      parameter ( mirror = .true. )
 
 c     Symmetry of the problem
 c     nsym = 0 : no symmetry,
@@ -121,8 +123,8 @@ c     moni_particle: The particle number for information monitoring.
       logical int_stat
       parameter ( int_stat = .true. )
       integer print_step, save_step, moni_particle
-      parameter ( print_step = 100,
-     &            save_step = 500,
+      parameter ( print_step = 1,
+     &            save_step = 1,
      &            moni_particle = 1600   )
            
       double precision pi
