@@ -1,5 +1,6 @@
-      subroutine input(x, vx, mass, rho, p, u, itype, hsml, ntotal)
-      
+      subroutine input(x, vx, mass, rho, p, u, itype, hsml,
+     &    ntotal,np,dx)
+    
 c----------------------------------------------------------------------
 c     Subroutine for loading or generating initial particle information
 
@@ -16,9 +17,9 @@ c     ntotal-- total particle number                               [out]
       implicit none     
       include 'param.inc'
 
-      integer itype(maxn), ntotal       
+      integer itype(maxn), ntotal, np
       double precision x(dim, maxn), vx(dim, maxn), mass(maxn), 
-     &                 p(maxn), u(maxn), hsml(maxn), rho(maxn)
+     &                 p(maxn), u(maxn), hsml(maxn), rho(maxn), dx
       integer i, d, im       
 
 c     load initial particle information from external disk file
@@ -48,7 +49,7 @@ c     load initial particle information from external disk file
        
       
       call static_water(x, vx, mass, rho, p, u, 
-     &                      itype, hsml, ntotal)
+     &                      itype, hsml, ntotal,np,dx)
       
         do i = 1, ntotal 
           write(1,1001) i, (x(d, i),d = 1, dim), (vx(d, i),d = 1, dim) 
@@ -73,11 +74,11 @@ c     load initial particle information from external disk file
        
       
       subroutine static_water(x, vx, mass, rho, p, u, 
-     &                        itype, hsml, ntotal)
+     &                        itype, hsml, ntotal,np,dx)
 
 c----------------------------------------------------------------------     
 c     This subroutine is used to generate initial data for the 
-c     2 d shear driven cavity probem with Re = 1
+c     2-d static water benchmark as well as dambreak with Re = 1
 c     x-- coordinates of particles                                 [out]
 c     vx-- velocities of particles                                 [out]
 c     mass-- mass of particles                                     [out]
@@ -88,7 +89,8 @@ c     itype-- types of particles                                   [out]
 c          =2   water
 c     h-- smoothing lengths of particles                           [out]
 c     ntotal-- total particle number                               [out]
-
+c     dx-- initial interval among particles                        [out]
+c     np-- total particle number in one column                     [out]
       implicit none     
       include 'param.inc'
       
@@ -99,14 +101,14 @@ c     ntotal-- total particle number                               [out]
       double precision xl, yl, dx, dy
 
 
-      m = 40
-      n = 40
-      mp = m-1
-      np = n-1
+      m = 39
+      n = 39
+      mp = 15
+      np = 20
       xl = x_maxgeom-x_mingeom
       yl = y_maxgeom-y_mingeom
-      dx = xl/mp
-      dy = yl/np
+      dx = xl/m
+      dy = yl/n
       
      
       ntotal = mp*np
@@ -125,7 +127,7 @@ c      print *,ntotal
 	  vx(2, i) = 0.     
 c--- original density,pressure & mass of the particles    
         p(i) = 0
-c        if (mirror) p(i)=9.8*1000*(yl-x(2,i))
+       if (mirror) p(i)=9.8*1000*(yl-x(2,i))
 c        rho(i)= 1000*(p(i)/20+1)**(1/7)
         rho(i) = 1000   
         mass(i) = dx*dy*rho(i)  

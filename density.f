@@ -187,7 +187,7 @@ c     Secondly calculate the rho integration over the space
         drhodt(i) = 0.
       enddo
      
-      delta  = 0.1
+      delta  = 0.
       c = 29.32
       do k=1,niac      
         i = pair_i(k)

@@ -22,10 +22,10 @@ c     e-- total energy of particles                                [out]
       include 'param.inc'
 
       integer ntotal, itype(maxn), maxtimestep, d, m, i, yesorno, 
-     & current_ts, nstart    
+     & current_ts, nstart,np    
       double precision x(3,maxn), vx(3, maxn), mass(maxn),rho(maxn),
      &     p(maxn), u(maxn), c(maxn), s(maxn), e(maxn), hsml(maxn), dt
-      double precision s1, s2, c0
+      double precision s1, s2, c0, dx
 
       current_ts=0
       call time_print
@@ -34,11 +34,11 @@ c  this timestep is set according to dt<=c*h/c0, where c=0.2 is the crount
 c  number, and c0 is the speed of sound      
      
       
-      call input(x, vx, mass, rho, p, u, itype, hsml, ntotal)     
+      call input(x, vx, mass, rho, p, u, itype, hsml, ntotal,np,dx)     
 c the speed of sound under water is calculated with c0=15sqrt(gh), which
 c is also implied in the equation of state
-      c0 = 15*sqrt(9.8*(y_maxgeom-y_mingeom))
-      dt = 2.0*hsml(1)/c0 
+      c0 = 15*sqrt(9.8*np*dx)
+      dt = 0.2*hsml(1)/c0 
   1   write(*,*)'  ***************************************************' 
       write(*,*)'          Please input the maximal time steps        '
       write(*,*)'  ***************************************************'

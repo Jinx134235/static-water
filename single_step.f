@@ -34,7 +34,7 @@ c     av       :  Monaghan average velocity                        [out]
       integer itimestep, ntotal, itype(maxn), maxtimestep, scale_k
       double precision dt, hsml(maxn), mass(maxn), u(maxn), s(maxn), 
      &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn), du(maxn),
-     &        ds(maxn), drho(maxn)          
+     &        ds(maxn), drho(maxn)
       integer i, d,j,k,nvirt, niac, pair_i(max_interaction),mini,
      &        pair_j(max_interaction), ns(maxn), nwall, maxi,ntotalvirt,
      &         mother(maxn)
@@ -67,7 +67,7 @@ c      nvirt=0
      &       rho,u,p,itype, nwall,mother)
 c        print *,"after virt_part"
 c        print *,nvirt 
-       open(1,file="../data/ini_virt.dat")
+       open(1,file="../data/init_virt.dat")
 c         write(4,*) nvirt
         do i = ntotal+1, ntotal+nvirt 
 c         if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.x_mingeom) then
@@ -231,7 +231,7 @@ c   update velocity of the mirror particles
      &       rho,u,p,itype, nwall,mother)
 
 c   pressure correction as well as density     
-       b = 1.2281e5
+       b = 6.3e4
        do i = 1,nvirt
            p(ntotal + i) = p(mother(ntotal + i))
            rho(ntotal + i) = rho(mother(ntotal + i))
