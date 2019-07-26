@@ -126,15 +126,22 @@ c      enddo
 c          if(mod(i,39).le.10.and.i.lt.ntotal) print *,i,drho(i)
              rho(i) = rho(i) + dt*drho(i)	 
              call p_art_water(rho(i),x(2,i),c(i),p(i))   
-c           p(i)=p(i)+9.8*1000*(y_maxgeom-x(2,i))
-c          if (p(i).lt.0) p(i)=0
       enddo
 c      print *,hsml(1)
 
-      do i = ntotal+1, ntotal+nvirt
-           p(i) = p(mother(i))
-           rho(i) = rho(mother(i))
+       b = 1.2281e5
+       do i = 1,nvirt
+           p(ntotal + i) = p(mother(ntotal + i))
+           rho(ntotal + i) = rho(mother(ntotal + i))
+          if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.y_mingeom) then
+c             print *,p(ntotal+i)
+           p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
+     &     (y_mingeom-x(2,ntotal+i))
+           rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
+
+           endif
       enddo
+
 
       if(dynamic) then
 c---  Dynamic viscosity:
@@ -230,19 +237,6 @@ c   update velocity of the mirror particles
        call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
 
-c   pressure correction as well as density     
-       b = 1.2281e5
-       do i = 1,nvirt
-           p(ntotal + i) = p(mother(ntotal + i))
-           rho(ntotal + i) = rho(mother(ntotal + i))
-          if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.x_mingeom) then
-c             print *,p(ntotal+i)
-           p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
-     &     (y_mingeom-x(2,ntotal+i))
-           rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
-          
-           endif
-      enddo
 
       if (mod(itimestep,save_step).eq.0) then
         open(4,file="../data/xv_vp.dat")
