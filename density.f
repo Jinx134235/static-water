@@ -91,7 +91,7 @@ c     Calculate SPH sum for rho:
 
 c     Thirdly, calculate the normalized rho, rho=sum(rho)/sum(w)
      
-      if (nor_density.and.mod(itimestep,30).eq.0) then 
+      if (nor_density) then 
         do i=1, ntotal
           rho(i)=rho(i)/wi(i)
         enddo
@@ -99,8 +99,8 @@ c     Thirdly, calculate the normalized rho, rho=sum(rho)/sum(w)
       
       end
       
-      subroutine con_density(ntotal,mass,niac,pair_i,pair_j,hsml,w,
-     &           dwdx,vx,itype,x,rho,drhodt)
+      subroutine con_density(ntotal,mass,niac,pair_i,pair_j,
+     &          hsml,w, dwdx,vx,itype,x,rho,wi,drhodt)
 
 c----------------------------------------------------------------------
 c     Subroutine to calculate the density with SPH continuity approach.
@@ -109,6 +109,7 @@ c     See Equ.(4.34)
 c     ntotal : Number of particles                                  [in]
 c     mass   : Particle masses                                      [in]
 c     niac   : Number of interaction pairs                          [in]
+c     c      : Sound speed of particles                             
 c     pair_i : List of first partner of interaction pair            [in]
 c     pair_j : List of second partner of interaction pair           [in]
 c     dwdx   : derivation of Kernel for all interaction pairs       [in]
@@ -125,13 +126,14 @@ c     norrho : normalized density of all particles                 [out]
      
 
       integer ntotal,niac,pair_i(max_interaction),
-     &        pair_j(max_interaction), itype(maxn)    
+     &        pair_j(max_interaction), itype(maxn), itimestep    
       double precision mass(maxn), dwdx(3,max_interaction),
      &       vx(dim,maxn), x(dim,maxn), rho(maxn), drhodt(maxn),
      &       hsml(maxn), w(max_interaction)
       integer i,j,k,d    
       double precision   vcc, dvx(dim),delta, r,c, dx(dim),hv(dim),
-     &       selfdens, wi(maxn),psi(dim), xcc
+     &       selfdens,wi(maxn), psi(dim), xcc
+c      double precision, intent,output:: wi(maxn) 
 c      real wi(maxn)
 
       do d=1,dim
@@ -142,7 +144,10 @@ c     Self density of each particle: Wii (Kernel for distance 0)
 c     and take contribution of particle itself:
 
       r=0.
-      
+      do i =1,ntotal
+         wi(i) = 0.
+      enddo
+
 c     Firstly calculate the integration of the kernel over the space
 c     checking the normalization condition 
       do i=1,ntotal
@@ -161,13 +166,13 @@ c        if (pair_i(k).eq.1) print *, pair_j(k)
        
       enddo
       
-      open(1, file="../data/kernel.dat")
+      open(10, file="../data/kernel.dat")
     
       do i = 1,ntotal
-         write (1,1001) i,wi(i)
+         write (10,1001) i,wi(i)
        enddo
  1001     format(2x, I4, 2x, e14.8)
-      close(1)
+      close(10)
 
 c  check normalization condition
 c      do i=1,ntotal
@@ -185,6 +190,10 @@ c     Secondly calculate the rho integration over the space
    
       do i = 1, ntotal
         drhodt(i) = 0.
+c     density correction(Shepard filter)
+c        if (nor_density.and.mod(itimestep,30).eq.0) then 
+c          rho(i) = rho(i)/wi(i)
+c       endif
       enddo
      
       delta  = 0.1
@@ -202,19 +211,22 @@ c     Secondly calculate the rho integration over the space
         enddo  
         vcc = dvx(1)*dwdx(1,k) 
         xcc = psi(1)*dwdx(1,k)
+      
         do d=2,dim
           vcc = vcc + dvx(d)*dwdx(d,k)
           xcc = xcc + psi(d)*dwdx(d,k)
-        enddo    
+        enddo
+c        if (k.le.44) print *,vcc,xcc 
+
         drhodt(i) = drhodt(i) + mass(j)*vcc
         drhodt(j) = drhodt(j) + mass(i)*vcc
 c  add filter to the continuity equation(Molteni,2009)
         if (filt_density) then
+c           if (i.eq.1) print *,'before filter',drhodt(i) 
           drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
-
+c           if (i.eq.1) print *,'after filter',drhodt(i) 
           drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
         endif
        enddo    
     
-c       print *,"after filtered" ,drhodt(1)
       end

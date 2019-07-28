@@ -42,7 +42,7 @@ c      common nvirt
       double precision w(max_interaction), dwdx(3,max_interaction),  
      &       indvxdt(dim,maxn),exdvxdt(dim,maxn),ardvxdt(dim,maxn),  
      &       avdudt(maxn), ahdudt(maxn), c(maxn), eta(maxn),dis_x, 
-     &       dis_y 
+     &       dis_y, wi(maxn) 
       double precision x(dim,maxn), vx(dim,maxn),dx(dim,maxn), 
      &       dvx(dim,maxn), av(dim,maxn), maxvel, b, minvel, vel                          
 
@@ -112,24 +112,23 @@ c---  Density approximation or change rate
 c---  summation_density:(4.26)
 c---  con_density: calculting density through continuity equation (4.31)/(4.34)      
  
-      if (summation_density) then      
-c        call sum_density(ntotal+nvirt,hsml,mass,niac,pair_i,pair_j,w,
-c     &       itype,rho)          
-c      do i=1,ntotal+nwall
-c        call p_art_water(rho(i), x(2,i),p(i),c(i))
-c      enddo     
-      else   
-        call con_density(ntotal+nvirt,mass,niac,pair_i,pair_j,hsml,w,
-     &       dwdx,vx,itype,x,rho,drho)
-      endif
-       do i = 1,ntotal              
-c          if(mod(i,39).le.10.and.i.lt.ntotal) print *,i,drho(i)
+  
+      call con_density(ntotal+nvirt,mass,niac,pair_i,pair_j,
+     &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
+   
+      do i = 1,ntotal              
+c          if(mod(i,39).le.10.and.i.lt.ntotal) print *,i,drho(i)`
              rho(i) = rho(i) + dt*drho(i)	 
              call p_art_water(rho(i),x(2,i),c(i),p(i))   
       enddo
 c      print *,hsml(1)
 
-       b = 1.2281e5
+      if (mod(itimestep,30).eq.0) then      
+        call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
+     &       itype,rho)         
+      endif
+  
+        b = 1.2281e5
        do i = 1,nvirt
            p(ntotal + i) = p(mother(ntotal + i))
            rho(ntotal + i) = rho(mother(ntotal + i))
@@ -239,21 +238,21 @@ c   update velocity of the mirror particles
 
 
       if (mod(itimestep,save_step).eq.0) then
-        open(4,file="../data/xv_vp.dat")
-        open(5,file="../data/state_vp.dat")
-        open(6,file="../data/other_vp.dat")            
-        write(4,*) nvirt
+        open(40,file="../data/xv_vp.dat")
+        open(50,file="../data/state_vp.dat")
+        open(60,file="../data/other_vp.dat")            
+        write(40,*) nvirt
         do i = ntotal + 1, ntotal + nvirt         
-          write(4,1004) i, (x(d, i), d=1,dim), (vx(d, i), d = 1, dim)              
-          write(5,1005) i, mass(i), rho(i), p(i), u(i)
-          write(6,1006) i, itype(i), hsml(i), mother(i)                               
+          write(40,1004) i, (x(d, i), d=1,dim), (vx(d, i), d = 1, dim)              
+          write(50,1005) i, mass(i), rho(i), p(i), u(i)
+          write(60,1006) i, itype(i), hsml(i), mother(i)                               
         enddo       
 1004    format(1x, I6, 4(2x, e14.8))
 1005    format(1x, I6, 4(2x, e14.8)) 
 1006    format(1x, I6, 2x, I4, 2x, e14.8, 2x, I6)
-        close(4)
-        close(5) 
-        close(6) 
+        close(40)
+        close(50) 
+        close(60) 
       endif 
      
 

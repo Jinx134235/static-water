@@ -103,7 +103,7 @@ c     filt_density = .true. : Applying density filter, Molteni,2009
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
       parameter ( nor_density  = .true. )      
-      parameter ( filt_density = .true. )
+      parameter ( filt_density = .false. )
       parameter ( dynamic = .false. )
       parameter ( mirror = .true. )
 
@@ -123,9 +123,8 @@ c     moni_particle: The particle number for information monitoring.
       logical int_stat
       parameter ( int_stat = .true. )
       integer print_step, save_step, moni_particle
-      parameter ( print_step = 1,
-     &            save_step = 1,
-     &            moni_particle = 1600   )
+      parameter ( print_step = 100,
+     &            save_step = 50   )
            
       double precision pi
       parameter ( pi = 3.14159265358979323846 )
