@@ -58,6 +58,14 @@ c         = 3, Quintic kernel (Morris 1997)
       integer skf 
       parameter(skf = 3)
 
+c     Density filter
+c     filt = 0, no filter
+c          = 1, Molteni and Colagrossi,2009
+c          = 2, Georgie and Jose,2019
+c	   = 3, Antuono,2010
+      integer filt
+      parameter(filt = 2)
+
 c     Switches for different senarios
 
 c     summation_density = .TRUE. : Use density summation model in the code, 
@@ -90,7 +98,7 @@ c     filt_density = .true. : Applying density filter, Molteni,2009
       logical summation_density, average_velocity, config_input,
      &        virtual_part, vp_input, visc, ex_force, heat_artificial,
      &        visc_artificial, self_gravity, nor_density, dynamic,
-     &        mirror, filt_density
+     &        mirror
 
       parameter ( summation_density  = .false. )
       parameter ( average_velocity  = .false. )
@@ -102,8 +110,7 @@ c     filt_density = .true. : Applying density filter, Molteni,2009
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .true. )      
-      parameter ( filt_density = .false. )
+      parameter ( nor_density  = .false. )      
       parameter ( dynamic = .false. )
       parameter ( mirror = .true. )
 
@@ -124,7 +131,7 @@ c     moni_particle: The particle number for information monitoring.
       parameter ( int_stat = .true. )
       integer print_step, save_step, moni_particle
       parameter ( print_step = 100,
-     &            save_step = 50   )
+     &            save_step = 100   )
            
       double precision pi
       parameter ( pi = 3.14159265358979323846 )

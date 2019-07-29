@@ -67,27 +67,21 @@ c      nvirt=0
      &       rho,u,p,itype, nwall,mother)
 c        print *,"after virt_part"
 c        print *,nvirt 
-       open(1,file="../data/ini_virt.dat")
-c         write(4,*) nvirt
+       open(13,file="../data/ini_virt.dat")
         do i = ntotal+1, ntotal+nvirt 
-c         if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.x_mingeom) then
-c           p(i) = p(mother(i))+2*9.8*1000*(y_mingeom-x(2,i))
-c          rho(i) = 1000
-c          endif
-          write(1,1001) i, (x(d, i),d = 1, dim), p(i)
+          write(13,1001) i, (x(d, i),d = 1, dim), p(i)
         enddo   
 1001    format(1x, I5, 5(2x, e14.8)) 
       
       endif
-
-      close(1) 
+       close(13)
 
       
 c---  Interaction parameters, calculating neighboring particles
 c     and optimzing smoothing length
-      open(1,file="../data/xv_vp.dat")
-      read(1,*) nvirt
-      close(1)
+c      open(15,file="../data/xv_vp.dat")
+c      read(15,*) nvirt
+c      close(15)
       ntotalvirt = ntotal + nvirt
 c      print *,nvirt
 c      print *,"before nps"
@@ -123,7 +117,7 @@ c          if(mod(i,39).le.10.and.i.lt.ntotal) print *,i,drho(i)`
       enddo
 c      print *,hsml(1)
 
-      if (mod(itimestep,30).eq.0) then      
+      if (nor_density.and.mod(itimestep,30).eq.0) then      
         call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
      &       itype,rho)         
       endif
@@ -238,6 +232,7 @@ c   update velocity of the mirror particles
 
 
       if (mod(itimestep,save_step).eq.0) then
+c        open(30,file="../data/trace_p.dat")
         open(40,file="../data/xv_vp.dat")
         open(50,file="../data/state_vp.dat")
         open(60,file="../data/other_vp.dat")            
@@ -258,18 +253,18 @@ c   update velocity of the mirror particles
 
 
       if (mod(itimestep,print_step).eq.0) then      
-          write(*,*)
-          write(*,*) '**** particle moving fastest ****', maxi         
+          write(*,*) 'pressure of center',p(int(ntotal/2))
+c          write(*,*) '**** particle moving fastest ****', maxi         
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
-          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
-          write(*,101) dvx(1,maxi),dvx(2,maxi),p(maxi)
-           write(*,*) '**** particle moving slowest ****', mini         
+c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
+c          write(*,101) dvx(1,maxi),dvx(2,maxi),p(maxi)
+c           write(*,*) '**** particle moving slowest ****', mini         
 c         write(*,102)'velocity(y)','internal(y)','total(y)'   
-          write(*,103)  x(1,mini),x(2,mini),vx(1,mini),vx(2,mini) 
+c          write(*,103)  x(1,mini),x(2,mini),vx(1,mini),vx(2,mini) 
       endif
       
-100   format(1x,4(2x,e12.6))     
-101   format(1x,4(2x,e12.6))          
-103   format(1x,4(2x,e12.6))      
+c100   format(1x,4(2x,e12.6))     
+c101   format(1x,4(2x,e12.6))          
+c103   format(1x,4(2x,e12.6))      
 
       end

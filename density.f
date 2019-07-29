@@ -132,7 +132,7 @@ c     norrho : normalized density of all particles                 [out]
      &       hsml(maxn), w(max_interaction)
       integer i,j,k,d    
       double precision   vcc, dvx(dim),delta, r,c, dx(dim),hv(dim),
-     &       selfdens,wi(maxn), psi(dim), xcc
+     &       selfdens,wi(maxn), psi(dim), xcc, b, rhoh
 c      double precision, intent,output:: wi(maxn) 
 c      real wi(maxn)
 
@@ -198,6 +198,7 @@ c       endif
      
       delta  = 0.1
       c = 29.32
+      b = c**2*1000/7
       do k=1,niac      
         i = pair_i(k)
         j = pair_j(k)
@@ -206,27 +207,44 @@ c       endif
           dx(d) = x(d,i) - x(d,j)
           r = r+dx(d)**2
         enddo
-        do d=1,dim
-          psi(d) = 2*(rho(j)-rho(i))*dx(d)/sqrt(r)
-        enddo  
         vcc = dvx(1)*dwdx(1,k) 
-        xcc = psi(1)*dwdx(1,k)
-      
-        do d=2,dim
+         do d=2,dim
           vcc = vcc + dvx(d)*dwdx(d,k)
-          xcc = xcc + psi(d)*dwdx(d,k)
         enddo
-c        if (k.le.44) print *,vcc,xcc 
 
         drhodt(i) = drhodt(i) + mass(j)*vcc
         drhodt(j) = drhodt(j) + mass(i)*vcc
 c  add filter to the continuity equation(Molteni,2009)
-        if (filt_density) then
+        if (filt.eq.1) then
+         do d=1,dim
+            psi(d) = 2*(rho(j)-rho(i))*dx(d)/sqrt(r)
+          enddo
+         xcc = psi(1)*dwdx(1,k)
+         do d=2,dim
+           xcc = xcc+psi(d)*dwdx(d,k)
+         enddo 
+          drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
+c           if (i.eq.1) print *,'after filter',drhodt(i) 
+          drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
+        elseif (filt.eq.2) then
+           rhoh = 1000*(1000*9.8*dx(dim)/b+1)**(1/7)
+c           if(k.le.10)print *,rhoh  
+           do d=1,dim
+            psi(d) = 2*(rho(j)-rho(i)-rhoh)*dx(d)/sqrt(r)
+          enddo
+c          if(k.eq.1) print*,psi
+           xcc = psi(1)*dwdx(1,k)
+           do d=2,dim
+           xcc = xcc+psi(d)*dwdx(d,k)
+           enddo
 c           if (i.eq.1) print *,'before filter',drhodt(i) 
           drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
 c           if (i.eq.1) print *,'after filter',drhodt(i) 
           drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
-        endif
+c        elseif (filt.eq.3) then
+           
+         endif
+
        enddo    
     
       end
