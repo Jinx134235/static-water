@@ -129,10 +129,10 @@ c     norrho : normalized density of all particles                 [out]
      &        pair_j(max_interaction), itype(maxn), itimestep    
       double precision mass(maxn), dwdx(3,max_interaction),
      &       vx(dim,maxn), x(dim,maxn), rho(maxn), drhodt(maxn),
-     &       hsml(maxn), w(max_interaction)
+     &       hsml(maxn), w(max_interaction), norrho(dim,maxn),adf(maxn)
       integer i,j,k,d    
       double precision   vcc, dvx(dim),delta, r,c, dx(dim),hv(dim),
-     &       selfdens,wi(maxn), psi(dim), xcc, b, rhoh
+     &       selfdens,wi(maxn), psi(dim), xcc,ucc, b, rhoh
 c      double precision, intent,output:: wi(maxn) 
 c      real wi(maxn)
 
@@ -146,6 +146,10 @@ c     and take contribution of particle itself:
       r=0.
       do i =1,ntotal
          wi(i) = 0.
+        adf(i) = 0.
+        do d =1,dim
+          norrho(d,i)=0.
+        enddo
       enddo
 
 c     Firstly calculate the integration of the kernel over the space
@@ -153,8 +157,6 @@ c     checking the normalization condition
       do i=1,ntotal
         call kernel(r,hv,hsml(i),selfdens,hv)
         wi(i)=selfdens*mass(i)/rho(i)
-        
-c        print *,i,selfdens,rho(i),wi(i)    
       enddo
 
       do k=1,niac
@@ -163,9 +165,29 @@ c        print *,i,selfdens,rho(i),wi(i)
 c        if (pair_i(k).eq.1) print *, pair_j(k)
          wi(i) = wi(i) + mass(j)/rho(j)*w(k)
          wi(j) = wi(j) + mass(i)/rho(i)*w(k)
-       
+        do d=1,dim
+           dx(d)=x(d,i)-x(d,j)
+        enddo   
+        xcc = dx(1)*dwdx(1,k)
+         do d=2,dim
+           xcc = xcc+dx(d)*dwdx(d,k)
+         enddo
+         adf(i) = adf(i)+xcc*mass(j)/rho(j)
+         adf(j) = adf(j)+xcc*mass(i)/rho(i)
       enddo
       
+c   calculate renormalized gradient of density
+      do k=1,niac
+        i = pair_i(k)
+        j = pair_j(k)
+        do d=1,dim
+         norrho(d,i) = norrho(d,i)+
+     & (rho(j)-rho(i))/adf(i)*mass(j)/rho(j)*dwdx(d,k)
+         norrho(d,j) = norrho(d,j)+
+     & (rho(i)-rho(j))/adf(j)*mass(i)/rho(i)*dwdx(d,k)    
+        enddo
+      enddo
+
       open(10, file="../data/kernel.dat")
     
       do i = 1,ntotal
@@ -174,26 +196,9 @@ c        if (pair_i(k).eq.1) print *, pair_j(k)
  1001     format(2x, I4, 2x, e14.8)
       close(10)
 
-c  check normalization condition
-c      do i=1,ntotal
-c       if (i.eq.moni_particle) print *,'wi(1600):',wi(moni_particle)
-c         if (i.le.120) print *,i,wi(i)
-c         if (abs(1-wi(i)).gt.1.e-2) then
-c             print *,
-c     &          ' >>> Error <<< : normalization condition unsatisfied'
-c              stop
-c         endif
-c      enddo
-
 c     Secondly calculate the rho integration over the space
-
-   
       do i = 1, ntotal
         drhodt(i) = 0.
-c     density correction(Shepard filter)
-c        if (nor_density.and.mod(itimestep,30).eq.0) then 
-c          rho(i) = rho(i)/wi(i)
-c       endif
       enddo
      
       delta  = 0.1
@@ -214,7 +219,8 @@ c       endif
 
         drhodt(i) = drhodt(i) + mass(j)*vcc
         drhodt(j) = drhodt(j) + mass(i)*vcc
-c  add filter to the continuity equation(Molteni,2009)
+
+c  add filter to the continuity equation
         if (filt.eq.1) then
          do d=1,dim
             psi(d) = 2*(rho(j)-rho(i))*dx(d)/sqrt(r)
@@ -230,7 +236,7 @@ c           if (i.eq.1) print *,'after filter',drhodt(i)
            rhoh = 1000*(1000*9.8*dx(dim)/b+1)**(1/7)
 c           if(k.le.10)print *,rhoh  
            do d=1,dim
-            psi(d) = 2*(rho(j)-rho(i)-rhoh)*dx(d)/sqrt(r)
+            psi(d) = 2*(rho(j)-rho(i)+rhoh)*dx(d)/sqrt(r)
           enddo
 c          if(k.eq.1) print*,psi
            xcc = psi(1)*dwdx(1,k)
@@ -241,8 +247,22 @@ c           if (i.eq.1) print *,'before filter',drhodt(i)
           drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
 c           if (i.eq.1) print *,'after filter',drhodt(i) 
           drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
-c        elseif (filt.eq.3) then
-           
+        elseif (filt.eq.3) then
+          ucc = (norrho(1,i)+norrho(1,j))*dx(1)
+          do d=2,dim
+            ucc = ucc + (norrho(d,i)+norrho(d,j))*dx(d)
+          enddo  
+          do d=1,dim
+            psi(d) = (rho(j)-rho(i)+ucc/2)*dx(d)/r
+          enddo
+          xcc = psi(1)*dwdx(1,k)
+          do d=2,dim
+           xcc = xcc+psi(d)*dwdx(d,k)
+          enddo
+          drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
+c           if (i.eq.1) print *,'after filter',drhodt(i) 
+          drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
+
          endif
 
        enddo    

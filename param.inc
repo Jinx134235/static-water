@@ -64,7 +64,7 @@ c          = 1, Molteni and Colagrossi,2009
 c          = 2, Georgie and Jose,2019
 c	   = 3, Antuono,2010
       integer filt
-      parameter(filt = 2)
+      parameter(filt = 1)
 
 c     Switches for different senarios
 
