@@ -1,5 +1,5 @@
       subroutine input(x, vx, mass, rho, p, u, itype, hsml,
-     &    ntotal,np,dx)
+     &    ntotal)
     
 c----------------------------------------------------------------------
 c     Subroutine for loading or generating initial particle information
@@ -49,7 +49,7 @@ c     load initial particle information from external disk file
        
       
       call static_water(x, vx, mass, rho, p, u, 
-     &                      itype, hsml, ntotal,np,dx)
+     &                      itype, hsml, ntotal)
       
         do i = 1, ntotal 
           write(1,1001) i, (x(d, i),d = 1, dim), (vx(d, i),d = 1, dim) 
@@ -74,7 +74,7 @@ c     load initial particle information from external disk file
        
       
       subroutine static_water(x, vx, mass, rho, p, u, 
-     &                        itype, hsml, ntotal,np,dx)
+     &                        itype, hsml, ntotal)
 
 c----------------------------------------------------------------------     
 c     This subroutine is used to generate initial data for the 
@@ -127,7 +127,7 @@ c      print *,ntotal
 	  vx(2, i) = 0.     
 c--- original density,pressure & mass of the particles    
         p(i) = 0
-       if (mirror) p(i)=9.8*1000*(yl-x(2,i))
+c       if (mirror) p(i)=9.8*1000*(np*dx-x(2,i))
 c        rho(i)= 1000*(p(i)/20+1)**(1/7)
         rho(i) = 1000   
         mass(i) = dx*dy*rho(i)  

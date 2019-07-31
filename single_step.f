@@ -124,10 +124,18 @@ c      print *,hsml(1)
         call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
      &       itype,rho)         
       endif
-  
+c   pressure correction as well as density     
+       b = 6.3e4
        do i = 1,nvirt
            p(ntotal + i) = p(mother(ntotal + i))
            rho(ntotal + i) = rho(mother(ntotal + i))
+          if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.x_mingeom) then
+c             print *,p(ntotal+i)
+           p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
+     &     (y_mingeom-x(2,ntotal+i))
+           rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
+
+           endif
       enddo
 
 
