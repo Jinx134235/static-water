@@ -64,7 +64,7 @@ c          = 1, Molteni and Colagrossi,2009
 c          = 2, Georgie and Jose,2019
 c	   = 3, Antuono,2010
       integer filt
-      parameter(filt = 1)
+      parameter(filt = 0)
 
 c     Switches for different senarios
 
@@ -110,7 +110,7 @@ c     filt_density = .true. : Applying density filter, Molteni,2009
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .false. )      
+      parameter ( nor_density  = .true. )      
       parameter ( dynamic = .false. )
       parameter ( mirror = .true. )
 
@@ -131,7 +131,7 @@ c     moni_particle: The particle number for information monitoring.
       parameter ( int_stat = .true. )
       integer print_step, save_step, moni_particle
       parameter ( print_step = 100,
-     &            save_step = 100   )
+     &            save_step = 1   )
            
       double precision pi
       parameter ( pi = 3.14159265358979323846 )

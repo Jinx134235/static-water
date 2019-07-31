@@ -1,6 +1,6 @@
-      subroutine single_step(itimestep, dt, ntotal, nvirt,hsml, mass, x,
-     &           vx,u, s,rho, p, t, tdsdt,dx,dvx, du, ds, drho,itype,av,  
-     &           niac, pair_i, pair_j) 
+      subroutine single_step(itimestep,nstart, dt, ntotal, nvirt,hsml, 
+     &           mass, x, vx,u, s,rho, p, t, tdsdt,dx,dvx, du, ds, drho, 
+     &           itype, av, niac, pair_i, pair_j) 
 
 c----------------------------------------------------------------------
 c   Subroutine to determine the right hand side of a differential 
@@ -27,11 +27,12 @@ c     ds       :  ds  = ds/dt                                      [out]
 c     drho     :  drho =  drho/dt                                  [out]
 c     itype    :  Type of particle                                 [in]
 c     av       :  Monaghan average velocity                        [out]
-
+c     p_record :  Record the pressure of center                    [out]
       implicit none
       include 'param.inc'
 
-      integer itimestep, ntotal, itype(maxn), maxtimestep, scale_k
+      integer itimestep, ntotal, itype(maxn), maxtimestep, scale_k,
+     &        nstart
       double precision dt, hsml(maxn), mass(maxn), u(maxn), s(maxn), 
      &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn), du(maxn),
      &        ds(maxn), drho(maxn)          
@@ -45,6 +46,7 @@ c      common nvirt
      &       dis_y, wi(maxn) 
       double precision x(dim,maxn), vx(dim,maxn),dx(dim,maxn), 
      &       dvx(dim,maxn), av(dim,maxn), maxvel, b, minvel, vel                          
+     
 
       do  i=1,ntotal
         avdudt(i) = 0.
@@ -72,21 +74,22 @@ c        print *,nvirt
           write(13,1001) i, (x(d, i),d = 1, dim), p(i)
         enddo   
 1001    format(1x, I5, 5(2x, e14.8)) 
-      
+        close(13)
       endif
-       close(13)
+       
 
       
 c---  Interaction parameters, calculating neighboring particles
 c     and optimzing smoothing length
-c      open(15,file="../data/xv_vp.dat")
-c      read(15,*) nvirt
-c      close(15)
+      if (itimestep.eq.nstart+1.and.nstart.ne.0) then
+         
+         open(15,file="../data/xv_vp.dat")
+         read(15,*) nvirt
+         close(15)  
+      endif
+     
       ntotalvirt = ntotal + nvirt
-c      print *,nvirt
-c      print *,"before nps"
-c      print *,x(1,1)
-
+c      print *,ntotal,nvirt
       if (nnps.eq.1) then 
         call direct_find(itimestep, ntotal,nvirt, hsml,x,niac,pair_i,
      &       pair_j,w,dwdx,ns)
@@ -254,6 +257,8 @@ c        open(30,file="../data/trace_p.dat")
 
       if (mod(itimestep,print_step).eq.0) then      
           write(*,*) 'pressure of center',p(int(ntotal/2))
+c          p_record(1) = itimestep
+c          p_record(2) = p(int(ntotal/2))
 c          write(*,*) '**** particle moving fastest ****', maxi         
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)

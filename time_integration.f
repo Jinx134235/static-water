@@ -24,7 +24,7 @@ c      dt-- timestep                                             [input]
       implicit none     
       include 'param.inc'
       
-      integer itype(maxn), ntotal, maxtimestep, niac
+      integer itype(maxn), ntotal, maxtimestep, niac, step
       double precision x(dim, maxn), vx(dim, maxn), mass(maxn), 
      &       rho(maxn), p(maxn), u(maxn), c(maxn), s(maxn), e(maxn), 
      &       hsml(maxn), dt
@@ -35,6 +35,8 @@ c      dt-- timestep                                             [input]
      &       drho(maxn),  av(dim, maxn), ds(maxn),
      &       t(maxn), tdsdt(maxn), temp_u, temp_rho 
       double precision  time
+      real, allocatable:: p_record(:)
+      allocate(p_record(200))
 c      common nvirt
                
       do i = 1, ntotal
@@ -59,10 +61,15 @@ c        time=current_ts*dt
 
 c---  Definition of variables out of the function vector:    
       
-        call single_step(itimestep, dt, ntotal,nvirt, hsml, mass, x, vx,
-     &        u, s, rho, p, t, tdsdt, dx,dvx, du, ds, drho, itype, av,
-     &        niac, pair_i, pair_j)  
+        call single_step(itimestep,nstart, dt, ntotal,nvirt, hsml, mass,
+     &        x, vx,u, s, rho, p, t, tdsdt, dx,dvx, du, ds, drho, itype,
+     &        av, niac, pair_i, pair_j)  
                   
+        if (mod(itimestep,print_step).eq.0) then
+c              p_record(1) = itimestep
+             i = itimestep/print_step 
+             p_record(i) = p(int(ntotal/2))
+        endif
 c        print *,vx(2,1)
 c        if (vx(2,1).gt.0) then
 c            print *,itimestep
@@ -84,6 +91,16 @@ c           stop
 c      endif
         time = time + dt
 
+        if(itimestep.eq.nstart+maxtimestep) then
+             open(20,file="../data/pcenter.dat")
+             do i =1,(nstart+maxtimestep)/print_step
+                step = i*print_step
+                write(20,1002) step, p_record(i)
+             enddo
+1002    format(1x, I6, 2x, e14.8)
+        close(20)
+        endif        
+
 	if (mod(itimestep,save_step).eq.0) then
           call output(x, vx, mass, rho, p, u, c, itype, hsml, ntotal)
 c         print x
@@ -92,7 +109,6 @@ c         print x
 c        if (mod(itimestep,print_step).eq.0) then
 c          write(*,*)
 c          write(*,101)'x','velocity', 'dvx'
-c      
 c         write(*,100)x(2,ntotal), vx(2,ntotal), dvx(2,ntotal)
 c        endif
         
@@ -102,5 +118,5 @@ c100     format(1x,3(2x,e12.6))
       enddo
 c      print *,current_ts
       
-
+      deallocate(p_record)
       end

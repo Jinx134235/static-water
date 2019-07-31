@@ -29,8 +29,7 @@ c     e-- total energy of particles                                [out]
 
       current_ts=0
       call time_print
-
-      
+      call time_elapsed(s1)      
       dt = 5.e-5
       
       call input(x, vx, mass, rho, p, u, itype, hsml, ntotal)     
@@ -42,13 +41,14 @@ c
       call time_integration(x, vx, mass, rho, p, u, c, s, e, itype, 
      &     hsml, ntotal, maxtimestep, dt, current_ts )
       call output(x, vx, mass, rho, p, u, c, itype, hsml, ntotal)      
-c      write(*,*)'  ***************************************************' 
-c      write(*,*)'          Run more time steps?(1=yes, 0=no)        '
-c      write(*,*)'  ***************************************************'
-c      read(*,*) yesorno
-c      if(yesorno.eq.1) go to 1
       call time_print
-c      call time_elapsed(s2)      
-c      write (*,*)'        Elapsed CPU time = ', s2-s1
+      write(*,*)'  ***************************************************' 
+      write(*,*)'          Run more time steps?(1=yes, 0=no)        '
+      write(*,*)'  ***************************************************'
+      read(*,*) yesorno
+      if(yesorno.eq.1) go to 1
+     
+      call time_elapsed(s2)      
+      write (*,*)'        Elapsed CPU time = ', s2-s1
                            
       end

@@ -52,7 +52,7 @@ c     3-dim. problem: maxngx = maxngy = maxngz ~ maxn^(1/3)
          scale_k = 3 
       endif 
      
-      
+c      if(mod(itimestep,print_step).eq.0) print *,ntotal 
       do i=1,ntotal
         countiac(i) = 0
       enddo
