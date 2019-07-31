@@ -35,7 +35,7 @@ c     p_record :  Record the pressure of center                    [out]
      &        nstart
       double precision dt, hsml(maxn), mass(maxn), u(maxn), s(maxn), 
      &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn), du(maxn),
-     &        ds(maxn), drho(maxn)          
+     &        ds(maxn), drho(maxn)
       integer i, d,j,k,nvirt, niac, pair_i(max_interaction),mini,
      &        pair_j(max_interaction), ns(maxn), nwall, maxi,ntotalvirt,
      &         mother(maxn)
@@ -125,17 +125,9 @@ c      print *,hsml(1)
      &       itype,rho)         
       endif
   
-        b = 1.2281e5
        do i = 1,nvirt
            p(ntotal + i) = p(mother(ntotal + i))
            rho(ntotal + i) = rho(mother(ntotal + i))
-          if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.y_mingeom) then
-c             print *,p(ntotal+i)
-           p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
-     &     (y_mingeom-x(2,ntotal+i))
-           rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
-
-           endif
       enddo
 
 
@@ -233,6 +225,19 @@ c   update velocity of the mirror particles
        call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
 
+c   pressure correction as well as density     
+       b = 6.3e4
+       do i = 1,nvirt
+           p(ntotal + i) = p(mother(ntotal + i))
+           rho(ntotal + i) = rho(mother(ntotal + i))
+          if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.x_mingeom) then
+c             print *,p(ntotal+i)
+           p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
+     &     (y_mingeom-x(2,ntotal+i))
+           rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
+          
+           endif
+      enddo
 
       if (mod(itimestep,save_step).eq.0) then
 c        open(30,file="../data/trace_p.dat")
@@ -256,10 +261,7 @@ c        open(30,file="../data/trace_p.dat")
 
 
       if (mod(itimestep,print_step).eq.0) then      
-          write(*,*) 'pressure of center',p(int(ntotal/2))
-c          p_record(1) = itimestep
-c          p_record(2) = p(int(ntotal/2))
-c          write(*,*) '**** particle moving fastest ****', maxi         
+          write(*,*) '**** particle moving fastest ****', maxi         
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
 c          write(*,101) dvx(1,maxi),dvx(2,maxi),p(maxi)

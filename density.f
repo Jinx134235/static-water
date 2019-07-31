@@ -219,7 +219,6 @@ c     Secondly calculate the rho integration over the space
 
         drhodt(i) = drhodt(i) + mass(j)*vcc
         drhodt(j) = drhodt(j) + mass(i)*vcc
-
 c  add filter to the continuity equation
         if (filt.eq.1) then
          do d=1,dim

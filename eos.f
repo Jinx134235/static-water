@@ -18,13 +18,13 @@ c     Artificial EOS, Form 1 (Monaghan, 1994)
 c     See Equ.(4.88)
        gamma=7.
        rho0=1000.       
-       c = 15*sqrt(9.8*(y_maxgeom-y_mingeom))
+       c = 15*sqrt(9.8*0.01*20)
        b = c**2*rho0/gamma 
        p = b*((rho/rho0)**gamma-1)      
 c       print *,p
 c       c = 0.03
        
-c          fluctuates from 15 to 20
+c     coeff in c fluctuates from 15 to 20
 
 c     static pressure underwater 
 c      p = rho*9.8*(1.e-3-h)

@@ -56,10 +56,11 @@ c     Initialize parameters: Maximum number of grid cells
       do d=1,3
         ngrid(d) = 1
       enddo
-      
-      cll = scale_k*hsml
-c     Range of sorting grid
 
+c     size of the cell, kh      
+      cll = scale_k*hsml
+c     Range of sorting grid, in case of wall boundary, expand 
+c     the computational domain by one cell
       maxgridx(1) = x_maxgeom+cll
       mingridx(1) = x_mingeom-cll
       if (dim.ge.2) then

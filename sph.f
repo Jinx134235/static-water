@@ -22,10 +22,10 @@ c     e-- total energy of particles                                [out]
       include 'param.inc'
 
       integer ntotal, itype(maxn), maxtimestep, d, m, i, yesorno, 
-     & current_ts, nstart    
+     & current_ts, nstart,np    
       double precision x(3,maxn), vx(3, maxn), mass(maxn),rho(maxn),
      &     p(maxn), u(maxn), c(maxn), s(maxn), e(maxn), hsml(maxn), dt
-      double precision s1, s2
+      double precision s1, s2, c0, dx
 
       current_ts=0
       call time_print
@@ -33,6 +33,7 @@ c     e-- total energy of particles                                [out]
       dt = 5.e-5
       
       call input(x, vx, mass, rho, p, u, itype, hsml, ntotal)     
+     
   1   write(*,*)'  ***************************************************' 
       write(*,*)'          Please input the maximal time steps        '
       write(*,*)'  ***************************************************'

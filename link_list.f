@@ -64,12 +64,10 @@ c     Initialize grid:
       
 c     Position particles on grid and create linked list:
       do i=1,ntotal
-c        if (i.eq.1)print *,x(1,i)
         call grid_geom(i,x(1:dim,i),hsml,scale_k,maxgridx,mingridx,
      &    gcell, itimestep)
         do d=1,dim
           xgcell(d,i) = gcell(d)
-c        if (i.eq.1) print *,xgcell(d,i)
         enddo
 
         celldata(i) = grid(gcell(1),gcell(2),gcell(3))
