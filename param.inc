@@ -22,10 +22,10 @@ c     z_maxgeom : Upper limit of allowed z-regime
 c     z_mingeom : Lower limit of allowed z-regime 
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom
-      parameter ( x_maxgeom =  0.195e0     ,
-     &            x_mingeom =  -0.195e0     ,
-     &            y_maxgeom =  0.195e0     ,
-     &            y_mingeom =  -0.195e0     ,
+      parameter ( x_maxgeom =  1.3e0     ,
+     &            x_mingeom =  0.e0     ,
+     &            y_maxgeom =  0.65e0     ,
+     &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     )
     
@@ -93,17 +93,17 @@ c     filt_density = .true. : Applying density filter, Molteni,2009
      &        mirror, filt_density
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .false. )
+      parameter ( average_velocity  = .true. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
-      parameter ( visc  = .false. )
-      parameter ( ex_force  = .false.)
-      parameter ( visc_artificial  = .true. )
+      parameter ( visc  = .true. )
+      parameter ( ex_force  = .true.)
+      parameter ( visc_artificial  = .false. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
       parameter ( nor_density  = .true. )      
-      parameter ( filt_density = .true. )
+      parameter ( filt_density = .false. )
       parameter ( dynamic = .false. )
       parameter ( mirror = .true. )
 

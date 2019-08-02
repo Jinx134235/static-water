@@ -101,10 +101,10 @@ c     np-- total particle number in one column                     [out]
       double precision xl, yl, dx, dy
 
 
-      m = 39
-      n = 39
-      mp = 15
-      np = 20
+      m = 260
+      n = 130
+      mp = 50
+      np = 50
       xl = x_maxgeom-x_mingeom
       yl = y_maxgeom-y_mingeom
       dx = xl/m
@@ -116,8 +116,8 @@ c      print *,ntotal
       do i = 1, mp
 	  do j = 1, np
 	      k = j + (i-1)*np
-	      x(1, k) = (i-1)*dx+dx/2+x_mingeom
-	      x(2, k) = (j-1)*dy+dy/2+y_mingeom
+	      x(1, k) = i*dx+x_mingeom
+	      x(2, k) = j*dy+y_mingeom
          enddo
       enddo
     
@@ -127,7 +127,7 @@ c      print *,ntotal
 	  vx(2, i) = 0.     
 c--- original density,pressure & mass of the particles    
         p(i) = 0
-       if (mirror) p(i)=9.8*1000*(yl-x(2,i))
+       if (mirror) p(i)=9.8*1000*(np*dx+dx/2-x(2,i))
 c        rho(i)= 1000*(p(i)/20+1)**(1/7)
         rho(i) = 1000   
         mass(i) = dx*dy*rho(i)  
