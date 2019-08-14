@@ -63,12 +63,12 @@ c      print *,"begining timestep"
 c      print *,itimestep
 c      print *,x(2,ntotal+1)
 c      nvirt=0
-      if (itimestep.eq.1) then 
        
          call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
 c        print *,"after virt_part"
 c        print *,nvirt 
+      if(itimestep.eq.1)then
        open(13,file="../data/ini_virt.dat")
         do i = ntotal+1, ntotal+nvirt 
           write(13,1001) i, (x(d, i),d = 1, dim), p(i)
@@ -125,7 +125,7 @@ c      print *,hsml(1)
      &       itype,rho)         
       endif
 c   pressure correction as well as density     
-       b = 6.3e4
+       b = c0**2*1000/7
        do i = 1,nvirt
            p(ntotal + i) = p(mother(ntotal + i))
            rho(ntotal + i) = rho(mother(ntotal + i))
@@ -229,23 +229,6 @@ c            if (x(2,i).lt.x_mingeom+scale_k*hsml(i))then
 c            endif
        enddo
 
-c   update velocity of the mirror particles
-       call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
-     &       rho,u,p,itype, nwall,mother)
-
-c   pressure correction as well as density     
-       b = 6.3e4
-       do i = 1,nvirt
-           p(ntotal + i) = p(mother(ntotal + i))
-           rho(ntotal + i) = rho(mother(ntotal + i))
-          if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.x_mingeom) then
-c             print *,p(ntotal+i)
-           p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
-     &     (y_mingeom-x(2,ntotal+i))
-           rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
-          
-           endif
-      enddo
 
       if (mod(itimestep,save_step).eq.0) then
 c        open(30,file="../data/trace_p.dat")

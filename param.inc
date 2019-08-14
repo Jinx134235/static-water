@@ -21,13 +21,15 @@ c     y_mingeom : Lower limit of allowed y-regime
 c     z_maxgeom : Upper limit of allowed z-regime 
 c     z_mingeom : Lower limit of allowed z-regime 
       double precision x_maxgeom,x_mingeom,y_maxgeom,
-     &                 y_mingeom,z_maxgeom,z_mingeom
-      parameter ( x_maxgeom =  0.195e0     ,
-     &            x_mingeom =  -0.195e0     ,
-     &            y_maxgeom =  0.195e0     ,
-     &            y_mingeom =  -0.195e0     ,
+     &                 y_mingeom,z_maxgeom,z_mingeom,
+     &                 bedheight
+      parameter ( x_maxgeom =  1.04e0     ,
+     &            x_mingeom =  0.e0     ,
+     &            y_maxgeom =  .52e0     ,
+     &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
-     &            z_mingeom = -10.e0     )
+     &            z_mingeom = -10.e0     ,
+     &            bedheight =  1.8e-2    )
     
 c     SPH algorithm for particle approximation (pa_sph)
 c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
@@ -56,7 +58,7 @@ c     skf = 1, cubic spline kernel by W4 - Spline (Monaghan 1985)
 c         = 2, Gauss kernel   (Gingold and Monaghan 1981) 
 c         = 3, Quintic kernel (Morris 1997)
       integer skf 
-      parameter(skf = 3)
+      parameter(skf = 1)
 
 c     Density filter
 c     filt = 0, no filter
@@ -134,10 +136,7 @@ c     moni_particle: The particle number for information monitoring.
      &            save_step = 1,
      &            moni_particle = 1600   )
            
-      double precision pi
-      parameter ( pi = 3.14159265358979323846 )
-
-c     Simulation cases
-c     shocktube = .true. : carry out shock tube simulation
-c     shearcavity = .true. : carry out shear cavity simulation
-    
+      double precision pi, c0
+      parameter ( pi = 3.14159265358979323846,
+     &            c0 = 18.1865 )
+     

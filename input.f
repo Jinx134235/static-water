@@ -48,7 +48,7 @@ c     load initial particle information from external disk file
        open(3,file="../data/ini_other.dat") 
        
       
-      call static_water(x, vx, mass, rho, p, u, 
+      call dam_break(x, vx, mass, rho, p, u, 
      &                      itype, hsml, ntotal)
       
         do i = 1, ntotal 
@@ -73,7 +73,7 @@ c     load initial particle information from external disk file
       end              
        
       
-      subroutine static_water(x, vx, mass, rho, p, u, 
+      subroutine dam_break(x, vx, mass, rho, p, u, 
      &                        itype, hsml, ntotal)
 
 c----------------------------------------------------------------------     
@@ -97,22 +97,25 @@ c     np-- total particle number in one column                     [out]
       integer itype(maxn), ntotal
       double precision x(dim, maxn), vx(dim, maxn), mass(maxn),
      &     rho(maxn), p(maxn), u(maxn), hsml(maxn)
-      integer i, j, d, m, n, mp, np, k
-      double precision xl, yl, dx, dy
+      integer i, j, d, m, n, mp, np,mmp, nnp,k
+      double precision xl, yl, dx, dy, gate_x
 
 
-      m = 39
-      n = 39
-      mp = 15
-      np = 20
+      m = 208
+      n = 104
+      mp = 76
+      np = 30
       xl = x_maxgeom-x_mingeom
       yl = y_maxgeom-y_mingeom
       dx = xl/m
       dy = yl/n
-      
-     
-      ntotal = mp*np
+      gate_x = mp*dx
+      nnp = int(bedheight/dy)
+      mmp = (x_maxgeom-gate_x)/dx
+      ntotal = mp*np+mmp*nnp
+
 c      print *,ntotal
+c   particles of dam part 
       do i = 1, mp
 	  do j = 1, np
 	      k = j + (i-1)*np
@@ -121,13 +124,26 @@ c      print *,ntotal
          enddo
       enddo
     
+c  particles of  bed part
+      do i = 1,mmp
+        do j = 1,nnp
+         k = mp*np+j+(i-1)*nnp
+         x(1,k) = gate_x+dx/2+(i-1)*dx
+         x(2,k) = y_mingeom+dy/2+(j-1)*dy
+         enddo
+      enddo
 
       do i = 1, ntotal
        	vx(1, i) = 0.
 	  vx(2, i) = 0.     
 c--- original density,pressure & mass of the particles    
+c--- zero pressure
         p(i) = 0
-c       if (mirror) p(i)=9.8*1000*(np*dx-x(2,i))
+c       if (x(1,k).lt.gate_x) then
+c          p(i)=9.8*1000*(np*dy-x(2,i))
+c        else
+c          p(i)=9.8*1000*(nnp*dy-x(2,i))
+c  endif   
 c        rho(i)= 1000*(p(i)/20+1)**(1/7)
         rho(i) = 1000   
         mass(i) = dx*dy*rho(i)  

@@ -62,8 +62,8 @@ c      line2=(/3,4/)
 c   in this case, the computing domain is defaultly set as square
        
 	nvirt = 0
-      mp = 39
-      b = 1.2285e+05
+      mp = 208
+      b = c0**2*1000/7
 	xl = x_maxgeom-x_mingeom
 	dx = xl / mp
 	v_inf = 1.e-3

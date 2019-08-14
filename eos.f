@@ -18,8 +18,8 @@ c     Artificial EOS, Form 1 (Monaghan, 1994)
 c     See Equ.(4.88)
        gamma=7.
        rho0=1000.       
-       c = 15*sqrt(9.8*0.01*20)
-       b = c**2*rho0/gamma 
+       c = c0
+       b = c0**2*rho0/gamma 
        p = b*((rho/rho0)**gamma-1)      
 c       print *,p
 c       c = 0.03

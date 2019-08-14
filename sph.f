@@ -25,15 +25,15 @@ c     e-- total energy of particles                                [out]
      & current_ts, nstart,np    
       double precision x(3,maxn), vx(3, maxn), mass(maxn),rho(maxn),
      &     p(maxn), u(maxn), c(maxn), s(maxn), e(maxn), hsml(maxn), dt
-      double precision s1, s2, c0, dx
+      double precision s1, s2, dx
 
       current_ts=0
       call time_print
-      call time_elapsed(s1)      
-      dt = 5.e-5
       
       call input(x, vx, mass, rho, p, u, itype, hsml, ntotal)     
-     
+c     timestep according to CFL condition, crount number =0.2
+      dt = 7.8e-5
+      print *,dt
   1   write(*,*)'  ***************************************************' 
       write(*,*)'          Please input the maximal time steps        '
       write(*,*)'  ***************************************************'
@@ -48,8 +48,5 @@ c
       write(*,*)'  ***************************************************'
       read(*,*) yesorno
       if(yesorno.eq.1) go to 1
-     
-      call time_elapsed(s2)      
-      write (*,*)'        Elapsed CPU time = ', s2-s1
                            
       end
