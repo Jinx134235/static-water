@@ -175,7 +175,8 @@ c     fixed ghost particles around the cavity, including particles in corner
       if (mirror) then
       do i = 1, ntotal+nwall
 c    upside
-c         if ((x(2,i).ge.xl-scale_k*hsml(i)).and.(x(2,i).lt.xl))  then
+c         if((x(2,i).gt.y_maxgeom-scale_k*hsml(i)).and.
+c    &  (x(2,i).lt.y_maxgeom))  then
 c           nvirt=nvirt+1
 c           x(1, ntotal + nvirt)=x(1,i)
 c          x(2, ntotal + nvirt)=2*xl-x(2,i)
@@ -201,8 +202,8 @@ c    rightside
             mother(ntotal + nvirt)=i
            endif
 c    downside
-           if ((x(2,i).gt.x_mingeom).and.
-     &    (x(2,i).lt.x_mingeom+scale_k*hsml(i)))  then
+           if ((x(2,i).gt.y_mingeom).and.
+     &    (x(2,i).lt.y_mingeom+scale_k*hsml(i)))  then
            nvirt=nvirt+1
            x(1, ntotal + nvirt) = x(1,i)
            x(2, ntotal + nvirt) = 2*y_mingeom-x(2,i)

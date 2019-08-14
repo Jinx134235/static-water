@@ -82,7 +82,6 @@ c        print *,nvirt
 c---  Interaction parameters, calculating neighboring particles
 c     and optimzing smoothing length
       if (itimestep.eq.nstart+1.and.nstart.ne.0) then
-         
          open(15,file="../data/xv_vp.dat")
          read(15,*) nvirt
          close(15)  
@@ -134,7 +133,6 @@ c             print *,p(ntotal+i)
            p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
      &     (y_mingeom-x(2,ntotal+i))
            rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
-
            endif
       enddo
 
@@ -212,10 +210,11 @@ c        gravity
               vx(d, i) = vx(d, i) + dt * dvx(d, i) + av(d, i)
               x(d, i) = x(d, i) + dt * vx(d, i)       
             enddo
-c            if(mod(i,39).le.10) print *,i,vx(1,i),vx(2,i)
-c               print *,itimestep
-c               stop
-c             endif
+            if(x(2,i).le.y_mingeom) then
+               print *,i,vx(1,i),vx(2,i)
+               print *,itimestep
+               stop
+             endif
 c            if (x(2,i).lt.x_mingeom+scale_k*hsml(i))then
                 vel = sqrt(vx(1,i)**2+vx(2,i)**2)
                 if (vel.gt.maxvel)then
@@ -255,14 +254,14 @@ c        open(30,file="../data/trace_p.dat")
           write(*,*) '**** particle moving fastest ****', maxi         
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
-c          write(*,101) dvx(1,maxi),dvx(2,maxi),p(maxi)
+          write(*,101) p(ntotal+1), p(mother(ntotal+1))
 c           write(*,*) '**** particle moving slowest ****', mini         
 c         write(*,102)'velocity(y)','internal(y)','total(y)'   
 c          write(*,103)  x(1,mini),x(2,mini),vx(1,mini),vx(2,mini) 
       endif
       
 c100   format(1x,4(2x,e12.6))     
-c101   format(1x,4(2x,e12.6))          
+101   format(1x,4(2x,e12.6))          
 c103   format(1x,4(2x,e12.6))      
 
       end

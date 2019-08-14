@@ -29,7 +29,7 @@ c     z_mingeom : Lower limit of allowed z-regime
      &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
-     &            bedheight =  1.8e-2    )
+     &            bedheight =  0.e0    )
     
 c     SPH algorithm for particle approximation (pa_sph)
 c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))

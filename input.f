@@ -139,11 +139,11 @@ c  particles of  bed part
 c--- original density,pressure & mass of the particles    
 c--- zero pressure
         p(i) = 0
-c       if (x(1,k).lt.gate_x) then
-c          p(i)=9.8*1000*(np*dy-x(2,i))
-c        else
-c          p(i)=9.8*1000*(nnp*dy-x(2,i))
-c  endif   
+       if (x(1,k).lt.gate_x) then
+          p(i)=9.8*1000*(np*dy-x(2,i))
+       else
+         p(i)=9.8*1000*(nnp*dy-x(2,i))
+       endif   
 c        rho(i)= 1000*(p(i)/20+1)**(1/7)
         rho(i) = 1000   
         mass(i) = dx*dy*rho(i)  
