@@ -26,7 +26,7 @@ c     integer, intent(out):: nvirt
 
       double precision hsml(maxn),mass(maxn),x(dim,maxn),vx(dim,maxn),
      &                 rho(maxn), u(maxn), p(maxn)
-      integer i, j, d, im, mp, scale_k, line1(2), line2(2), nwall
+      integer i, j, d, im, mp,np, scale_k, line1(2), line2(2), nwall
       double precision xl, dx, v_inf, tiny, b
 c      common nvirt
       real corner(2,4)
@@ -62,11 +62,10 @@ c      line2=(/3,4/)
 c   in this case, the computing domain is defaultly set as square
        
 	nvirt = 0
-      mp = 208
-      b = c0**2*1000/7
+      mp = 1872
+      np = 31
 	xl = x_maxgeom-x_mingeom
 	dx = xl / mp
-	v_inf = 1.e-3
 c      h = hsml(1)
 c   coordinate of the corners
       corner(:,1)=(/x_mingeom,y_mingeom/)
@@ -121,31 +120,50 @@ c	   itype(ntotal + i) = 0
 c	    hsml(ntotal + i) = 1.3*dx
 c        enddo
       else
-c--- staggered grid on the boundary, up-right-down-left
-        
-       do i = 1, mp
-           nvirt = nvirt + 1
-	      x(1, ntotal + nvirt) = (i-1)*dx
-            x(2, ntotal + nvirt) = xl
-        enddo
+c--- staggered grid on the boundary, right-down-left
+c    upside        
+c       do i = 1, mp
+c           nvirt = nvirt + 1
+c	      x(1, ntotal + nvirt) = (i-1)*dx
+c            x(2, ntotal + nvirt) = xl
+c        enddo
+     
+       do i = 1, np
+          do j = 1,2
+   	   nvirt = nvirt + 1
+	   x(1, ntotal + nvirt) = x_maxgeom+(j-1)*dx/2
+           x(2, ntotal + nvirt) = y_maxgeom-(i-1)*dx-(j-1)*dx/2
+           p(ntotal+nvirt) = 0
+           if(x(2,ntotal+nvirt).le.bedheight) then
+             p(ntotal+nvirt)=9.8*1000*(bedheight-x(2,ntotal+nvirt))
+           endif
+          enddo
+       enddo
      
        do i = 1, mp
-   	     nvirt = nvirt + 1
-	     x(1, ntotal + nvirt) = xl
-           x(2, ntotal + nvirt) = xl-(i-1)*dx
-         enddo
-     
-       do i = 1, mp
+          do j = 1,2
    	    nvirt = nvirt + 1
-	    x(1, ntotal + nvirt) = xl-(i-1)*dx
-          x(2, ntotal + nvirt) = 0.
-        enddo
+	    x(1, ntotal + nvirt) = x_maxgeom-(i-1)*dx-(j-1)*dx/2
+            x(2, ntotal + nvirt) = y_mingeom-(j-1)*dx/2
+            if (x(1,ntotal+nvirt).le.damlength)then
+             p(ntotal+nvirt) = ((j-1)*dx/2+damheight)*9.8*1000
+            else
+             p(ntotal+nvirt) = ((j-1)*dx/2+bedheight)*9.8*1000
+            endif
+           enddo 
+       enddo
       
-       do i = 1, mp
+      do i = 1, np
+         do j =1,2
    	    nvirt = nvirt + 1
-	    x(1, ntotal + nvirt) = 0.
-          x(2, ntotal + nvirt) = (i-1)*dx
+	    x(1, ntotal + nvirt) = x_mingeom-(j-1)*dx/2
+           x(2, ntotal + nvirt) = y_mingeom+(i-1)*dx+(j-1)*dx/2
+           p(ntotal+nvirt) = 0
+           if(x(2,ntotal+nvirt).le.damheight) then
+             p(ntotal+nvirt)=9.8*1000*(damheight-x(2,ntotal+nvirt))
+           endif
          enddo
+      enddo
      
 c     add four particles in the corner
 c      nvirt = nvirt +4
@@ -165,7 +183,7 @@ c        if (i.le.mp+1)  vx(1, ntotal +i) = v_inf
 c        vx(1,ntotal + nvirt - 2) = v_inf
 	 if(itimestep.eq.1)  rho(ntotal + i) = 1000.
 	  mass(ntotal + i) = rho (ntotal + i) * dx * dx
-       if(itimestep.eq.1)  p(ntotal + i)= 1000*9.8*(xl-x(2,ntotal+i))
+c       if(itimestep.eq.1)  p(ntotal + i)= 1000*9.8*(xl-x(2,ntotal+i))
 	  u(ntotal + i) = 357.1
 	  itype(ntotal + i) = -2
 	  hsml(ntotal + i) = 1.3*dx
@@ -257,9 +275,6 @@ c     &         abs(x(1,i)-corner(1,j)).ne.0.and.
       endif   
 
 c      if(itimestep.eq.1) then
-        
-  
-    
 
       if (mod(itimestep,print_step).eq.0) then
         if (int_stat) then

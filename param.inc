@@ -22,14 +22,16 @@ c     z_maxgeom : Upper limit of allowed z-regime
 c     z_mingeom : Lower limit of allowed z-regime 
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
-     &                 bedheight
-      parameter ( x_maxgeom =  1.04e0     ,
+     &                 bedheight,damheight,damlength
+      parameter ( x_maxgeom =  9.36e0     ,
      &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  .52e0     ,
+     &            y_maxgeom =  .156e0     ,
      &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
-     &            bedheight =  0.e0    )
+     &            bedheight =  0.e0    ,
+     &            damheight =  .15e0    ,
+     &            damlength =  .38e0     )
     
 c     SPH algorithm for particle approximation (pa_sph)
 c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
@@ -112,9 +114,9 @@ c     filt_density = .true. : Applying density filter, Molteni,2009
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .true. )      
-      parameter ( dynamic = .false. )
-      parameter ( mirror = .true. )
+      parameter ( nor_density  = .false. )      
+      parameter ( dynamic = .true. )
+      parameter ( mirror = .false. )
 
 c     Symmetry of the problem
 c     nsym = 0 : no symmetry,

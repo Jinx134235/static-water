@@ -101,17 +101,18 @@ c     np-- total particle number in one column                     [out]
       double precision xl, yl, dx, dy, gate_x
 
 
-      m = 208
-      n = 104
-      mp = 76
-      np = 30
+      m = 1872
+      n = 31
+  
       xl = x_maxgeom-x_mingeom
       yl = y_maxgeom-y_mingeom
       dx = xl/m
       dy = yl/n
-      gate_x = mp*dx
+
+      mp = int(damlength/dx)
+      np = int(damheight/dy)
       nnp = int(bedheight/dy)
-      mmp = (x_maxgeom-gate_x)/dx
+      mmp = (x_maxgeom-damlength)/dx
       ntotal = mp*np+mmp*nnp
 
 c      print *,ntotal
@@ -128,7 +129,7 @@ c  particles of  bed part
       do i = 1,mmp
         do j = 1,nnp
          k = mp*np+j+(i-1)*nnp
-         x(1,k) = gate_x+dx/2+(i-1)*dx
+         x(1,k) = damlength+dx/2+(i-1)*dx
          x(2,k) = y_mingeom+dy/2+(j-1)*dy
          enddo
       enddo
@@ -138,7 +139,7 @@ c  particles of  bed part
 	  vx(2, i) = 0.     
 c--- original density,pressure & mass of the particles    
 c--- zero pressure
-        p(i) = 0
+c        p(i) = 0
        if (x(1,k).lt.gate_x) then
           p(i)=9.8*1000*(np*dy-x(2,i))
        else

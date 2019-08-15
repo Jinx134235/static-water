@@ -45,7 +45,7 @@ c      common nvirt
      &       avdudt(maxn), ahdudt(maxn), c(maxn), eta(maxn),dis_x, 
      &       dis_y, wi(maxn) 
       double precision x(dim,maxn), vx(dim,maxn),dx(dim,maxn), 
-     &       dvx(dim,maxn), av(dim,maxn), maxvel, b, minvel, vel                          
+     &       dvx(dim,maxn), av(dim,maxn), maxvel, b, minvel, vel,sumvel                          
      
 
       do  i=1,ntotal
@@ -63,9 +63,16 @@ c      print *,"begining timestep"
 c      print *,itimestep
 c      print *,x(2,ntotal+1)
 c      nvirt=0
-       
+c---  call virt_part only once when implying dynamic boundary
+       if(dynamic)then
+         if(itimestep.eq.1)then 
          call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
+          endif
+       elseif(virtual_part)then
+         call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
+     &       rho,u,p,itype, nwall,mother)
+       endif       
 c        print *,"after virt_part"
 c        print *,nvirt 
       if(itimestep.eq.1)then
@@ -101,9 +108,6 @@ c---   else if (nnps.eq.3) then
 c       call tree_search(itimestep, ntotal+nvirt,hsml,x,niac,pair_i,
 c     &       pair_j,w,dwdx,ns)
       endif         
-c      do k=1,50                 
-c         print *,k,dwdx(dim,k),pair_i(k),pair_j(k)
-c      enddo
 c---  Density approximation or change rate
 c---  summation_density:(4.26)
 c---  con_density: calculting density through continuity equation (4.31)/(4.34)      
@@ -112,32 +116,37 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
       call con_density(ntotal+nvirt,mass,niac,pair_i,pair_j,
      &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
    
-      do i = 1,ntotal              
-c          if(mod(i,39).le.10.and.i.lt.ntotal) print *,i,drho(i)`
+      if (dynamic) then
+         do i = 1,ntotal+nvirt
+           rho(i)=rho(i)+dt*drho(i)
+           call p_art_water(rho(i),x(2,i),c(i),p(i))
+         enddo
+      else
+       do i = 1,ntotal              
              rho(i) = rho(i) + dt*drho(i)	 
              call p_art_water(rho(i),x(2,i),c(i),p(i))   
-      enddo
+       enddo
 c      print *,hsml(1)
 
-      if (nor_density.and.mod(itimestep,30).eq.0) then      
+       if (nor_density.and.mod(itimestep,30).eq.0) then      
         call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
      &       itype,rho)         
-      endif
+       endif
 c   pressure correction as well as density     
-       b = c0**2*1000/7
-       do i = 1,nvirt
+        b = c0**2*1000/7
+        do i = 1,nvirt
            p(ntotal + i) = p(mother(ntotal + i))
            rho(ntotal + i) = rho(mother(ntotal + i))
-          if (itype(ntotal+i).ne.0.and.x(2,ntotal+i).lt.x_mingeom) then
+           if (itype(ntotal+i).ne.0.and.
+     &  x(2,ntotal+i).lt.x_mingeom) then
 c             print *,p(ntotal+i)
            p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
      &     (y_mingeom-x(2,ntotal+i))
            rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
            endif
-      enddo
-
-
-      if(dynamic) then
+       enddo
+      endif
+      if (dynamic) then
 c---  Dynamic viscosity:
 
       if (visc) call viscosity(ntotalvirt,itype,x,rho,eta)
@@ -184,20 +193,16 @@ c     Calculating average velocity of each partile for avoiding penetration (4.9
          if (average_velocity) call av_vel(ntotal,mass,niac,pair_i,
      &                           pair_j, w, vx, rho, av) 
 c---  Convert velocity, force, and energy to f and dfdt  
-
-    
      
       maxvel = 0.e0
       minvel = 1.e1
-
+      sumvel = 0.e0
       do i=1,ntotal
 c          print *,indvxdt(dim,i)
         do d=1,dim
 c          dvx(1,i)=0
           dvx(d,i) = indvxdt(d,i) + exdvxdt(d,i) + ardvxdt(d,i)          
         enddo
-c        if(mod(i,39).eq.1) print*,indvxdt(1,i),p(i),rho(i)
-c         if(i.eq.1) print*,indvxdt(2,i),ardvxdt(2,i)
 c        gravity
         if (self_gravity) then
           dvx(dim, i) = dvx(dim,i)-9.8
@@ -210,13 +215,14 @@ c        gravity
               vx(d, i) = vx(d, i) + dt * dvx(d, i) + av(d, i)
               x(d, i) = x(d, i) + dt * vx(d, i)       
             enddo
-            if(x(2,i).le.y_mingeom) then
-               print *,i,vx(1,i),vx(2,i)
-               print *,itimestep
-               stop
-             endif
+c            if(x(2,i).le.y_mingeom) then
+c               print *,i,vx(1,i),vx(2,i)
+c               print *,itimestep
+c               stop
+c             endif
 c            if (x(2,i).lt.x_mingeom+scale_k*hsml(i))then
                 vel = sqrt(vx(1,i)**2+vx(2,i)**2)
+                sumvel = sumvel + vel
                 if (vel.gt.maxvel)then
                 maxvel = vel
                 maxi = i
@@ -251,17 +257,17 @@ c        open(30,file="../data/trace_p.dat")
 
 
       if (mod(itimestep,print_step).eq.0) then      
-          write(*,*) '**** particle moving fastest ****', maxi         
+          write(*,*) '**** particle moving fastest ****', maxi, maxvel         
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
-          write(*,101) p(ntotal+1), p(mother(ntotal+1))
+          write(*,*) '**** average velocity:', real(sumvel/ntotal)
 c           write(*,*) '**** particle moving slowest ****', mini         
 c         write(*,102)'velocity(y)','internal(y)','total(y)'   
 c          write(*,103)  x(1,mini),x(2,mini),vx(1,mini),vx(2,mini) 
       endif
       
 c100   format(1x,4(2x,e12.6))     
-101   format(1x,4(2x,e12.6))          
+c101   format(1x,4(2x,e12.6))          
 c103   format(1x,4(2x,e12.6))      
 
       end
