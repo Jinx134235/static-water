@@ -105,13 +105,13 @@ c     filt_density = .true. : Applying density filter, Molteni,2009
      &        mirror
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .false. )
+      parameter ( average_velocity  = .true. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
-      parameter ( visc  = .false. )
-      parameter ( ex_force  = .false.)
-      parameter ( visc_artificial  = .true. )
+      parameter ( visc  = .true. )
+      parameter ( ex_force  = .true.)
+      parameter ( visc_artificial  = .false. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
       parameter ( nor_density  = .false. )      

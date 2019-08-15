@@ -86,19 +86,19 @@ c        enddo
 
 c     Monaghan type virtual particle on the Lower side
 
-c        do i = 1, mp+1
-c   	  nvirt = nvirt + 1
-c	  x(1, ntotal + nvirt) = (i-1)*dx
-c          x(2, ntotal + nvirt) = 0.  
-c        enddo
+        do i = 1, mp+1
+   	  nvirt = nvirt + 1
+	   x(1, ntotal + nvirt) = x_mingeom+(i-1)*dx
+          x(2, ntotal + nvirt) = y_mingeom  
+        enddo
 
 c     Monaghan type virtual particle on the Left side
 
-c        do i = 1, mp-1
-c   	  nvirt = nvirt + 1
-c	  x(1, ntotal + nvirt) = 0. 
-c         x(2, ntotal + nvirt) = i*dx
-c        enddo
+        do i = 1, np
+   	  nvirt = nvirt + 1
+ 	  x(1, ntotal + nvirt) = x_mingeom 
+         x(2, ntotal + nvirt) = y_mingeom+i*dx
+        enddo
 
 c     Monaghan type virtual particle on the Right side
 
@@ -107,18 +107,23 @@ c    	  nvirt = nvirt + 1
 c	  x(1, ntotal + nvirt) = xl 
 c         x(2, ntotal + nvirt) = i*dx  
 c        enddo
-
+c    Monaghan type virtual particle as obsatacle 
+       do i = 1, 20
+          nvirt = nvirt + 1
+           x(1,ntotal+nvirt) = x_mingeom+(np+i)*dx
+          x(2,ntotal+nvirt) = y_mingeom+i*dx
+        enddo   
         nwall = nvirt
-c	do i = 1, nvirt
-c         vx(1, ntotal + i) = 0.
-c	  vx(2, ntotal + i) = 0.
-c	  if(itimestep.eq.1)rho (ntotal + i) = 1000.
-c	  mass(ntotal + i) = rho (ntotal + i) * dx * dx
-c        if(itimestep.eq.1) p(ntotal + i) = 9.8*1000*(xl-x(2,ntotal+i)) 
-c	  u(ntotal + i) = 357.1
-c	   itype(ntotal + i) = 0
-c	    hsml(ntotal + i) = 1.3*dx
-c        enddo
+	do i = 1, nvirt
+         vx(1, ntotal + i) = 0.
+	  vx(2, ntotal + i) = 0.
+	  if(itimestep.eq.1)rho (ntotal + i) = 1000.
+	     mass(ntotal + i) = rho (ntotal + i) * dx * dx
+          if(itimestep.eq.1) p(ntotal + i) = 0. 
+	   u(ntotal + i) = 357.1
+	   itype(ntotal + i) = 0
+	    hsml(ntotal + i) = 1.3*dx
+        enddo
       else
 c--- staggered grid on the boundary, right-down-left
 c    upside        

@@ -120,8 +120,8 @@ c   particles of dam part
       do i = 1, mp
 	  do j = 1, np
 	      k = j + (i-1)*np
-	      x(1, k) = (i-1)*dx+dx/2+x_mingeom
-	      x(2, k) = (j-1)*dy+dy/2+y_mingeom
+	      x(1, k) = i*dx+x_mingeom
+	      x(2, k) = j*dy+y_mingeom
          enddo
       enddo
     

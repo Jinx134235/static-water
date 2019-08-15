@@ -72,6 +72,7 @@ c---  call virt_part only once when implying dynamic boundary
        elseif(virtual_part)then
          call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
+<<<<<<< HEAD
        endif       
 c        print *,"after virt_part"
 c        print *,nvirt 
@@ -82,6 +83,14 @@ c        print *,nvirt
         enddo   
 1001    format(1x, I5, 5(2x, e14.8)) 
         close(13)
+=======
+       open(1,file="../data/init_virt.dat")
+c         write(4,*) nvirt
+        do i = ntotal+1, ntotal+nvirt 
+          write(1,1001) i, (x(d, i),d = 1, dim), p(i)
+        enddo   
+1001    format(1x, I5, 5(2x, e14.8)) 
+>>>>>>> dambreak
       endif
        
 
@@ -171,7 +180,7 @@ c---  Internal forces:
                   
 c---  Artificial viscosity:
 
-         if (visc_artificial) call art_visc(ntotal,hsml,
+         if (visc_artificial) call art_visc(ntotalvirt,hsml,
      &      mass,x,vx,niac,rho,c,pair_i,pair_j,w,dwdx,ardvxdt,avdudt)
       
 c---  External forces:(4.93)
