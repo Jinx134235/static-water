@@ -19,7 +19,7 @@ c     See Equ.(4.88)
        gamma=7.
        rho0=1000.       
        c = c0
-       b = 100*9.8*rho0*damheight/gamma 
+       b = c0**2*rho0/gamma 
        p = b*((rho/rho0)**gamma-1)      
 c       print *,p
 c       c = 0.03

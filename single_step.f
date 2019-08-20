@@ -32,7 +32,7 @@ c     p_record :  Record the pressure of center                    [out]
       include 'param.inc'
 
       integer itimestep, ntotal, itype(maxn), maxtimestep, scale_k,
-     &        nstart
+     &        nstart, np
       double precision dt, hsml(maxn), mass(maxn), u(maxn), s(maxn), 
      &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn), du(maxn),
      &        ds(maxn), drho(maxn)
@@ -43,12 +43,12 @@ c      common nvirt
       double precision w(max_interaction), dwdx(3,max_interaction),  
      &       indvxdt(dim,maxn),exdvxdt(dim,maxn),ardvxdt(dim,maxn),  
      &       avdudt(maxn), ahdudt(maxn), c(maxn), eta(maxn),dis_x, 
-     &       dis_y, wi(maxn) 
-      double precision x(dim,maxn), vx(dim,maxn),dx(dim,maxn), 
-     &       dvx(dim,maxn), av(dim,maxn), maxvel, b, minvel, vel,sumvel                          
+     &       dis_y, wi(maxn), nvx(dim,maxn), v_inf 
+      double precision x(dim,maxn),vx(dim,maxn),dx(dim),dvx(dim,maxn),
+     &       av(dim,maxn), maxvel, b, minvel, vel,sumvel, norp                          
      
 
-      do  i=1,ntotal
+      do i=1,ntotal
         avdudt(i) = 0.
         ahdudt(i) = 0.
         do  d=1,dim
@@ -57,25 +57,22 @@ c      common nvirt
           exdvxdt(d,i) = 0.
         enddo
       enddo  
- 
+
+      np = 31   
+      b = c0**2*1000/7
+      v_inf = 0.
 c---  Positions of virtual (boundary) particles:
-c      print *,"begining timestep"
-c      print *,itimestep
-c      print *,x(2,ntotal+1)
-c      nvirt=0
 c---  call virt_part only once when implying dynamic boundary
        if(dynamic)then
          if(itimestep.eq.1)then 
          call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
           endif
-       elseif(virtual_part)then
+
+       else
          call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
-<<<<<<< HEAD
        endif       
-c        print *,"after virt_part"
-c        print *,nvirt 
       if(itimestep.eq.1)then
        open(13,file="../data/ini_virt.dat")
         do i = ntotal+1, ntotal+nvirt 
@@ -83,16 +80,7 @@ c        print *,nvirt
         enddo   
 1001    format(1x, I5, 5(2x, e14.8)) 
         close(13)
-=======
-       open(1,file="../data/init_virt.dat")
-c         write(4,*) nvirt
-        do i = ntotal+1, ntotal+nvirt 
-          write(1,1001) i, (x(d, i),d = 1, dim), p(i)
-        enddo   
-1001    format(1x, I5, 5(2x, e14.8)) 
->>>>>>> dambreak
       endif
-       
 
       
 c---  Interaction parameters, calculating neighboring particles
@@ -126,31 +114,56 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
      &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
    
       if (dynamic) then
-         do i = 1,ntotal+nvirt
+         if(dummy) then
+         do i = 1,ntotal
            rho(i)=rho(i)+dt*drho(i)
            call p_art_water(rho(i),x(2,i),c(i),p(i))
          enddo
+c   normalized velocity
+         do k = 1,niac
+            i = pair_i(k)
+            j = pair_j(k)
+            if (itype(j).lt.0)then
+              do d= 1,dim
+                nvx(d,j) = nvx(d,j)+vx(d,i)*w(k)/wi(j)
+              enddo
+            endif
+         enddo
+         do i = ntotal+1,ntotal+nvirt
+           do d = 1,dim 
+            vx(d,i) = 2*v_inf-nvx(d,i)
+           enddo
+         enddo
+
+c       if (nor_density.and.mod(itimestep,30).eq.0) then      
+c        call sum_density(ntotal+nvirt,hsml,mass,niac,pair_i,pair_j,w,
+c     &       itype,rho)
+         else
+          do i = 1,ntotal+nvirt
+           rho(i)=rho(i)+dt*drho(i)
+           call p_art_water(rho(i),x(2,i),c(i),p(i))
+          enddo
+
+         endif
       else
        do i = 1,ntotal              
-             rho(i) = rho(i) + dt*drho(i)	 
-             call p_art_water(rho(i),x(2,i),c(i),p(i))   
+          rho(i) = rho(i) + dt*drho(i)	 
+          call p_art_water(rho(i),x(2,i),c(i),p(i))   
        enddo
-c      print *,hsml(1)
-
-       if (nor_density.and.mod(itimestep,30).eq.0) then      
-        call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
-     &       itype,rho)         
+c  Shepard filter
+       if (nor_density.and.mod(itimestep,20).eq.0) then      
+         call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
+     &        itype,rho)         
        endif
 c   pressure correction as well as density     
-        b = c0**2*1000/7
+c        b = c0**2*1000/7
         do i = 1,nvirt
            p(ntotal + i) = p(mother(ntotal + i))
            rho(ntotal + i) = rho(mother(ntotal + i))
            if (itype(ntotal+i).ne.0.and.
-     &  x(2,ntotal+i).lt.x_mingeom) then
-c             print *,p(ntotal+i)
+     &  x(2,ntotal+i).lt.y_mingeom) then
            p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
-     &     (y_mingeom-x(2,ntotal+i))
+     &  (y_mingeom-x(2,ntotal+i))
            rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
            endif
        enddo
@@ -219,41 +232,74 @@ c        gravity
 
           du(i) = du(i) + avdudt(i) + ahdudt(i)
            u(i) = u(i) + dt*du(i)
-            if(u(i).lt.0)  u(i) = 0.         
-            do d = 1, dim                   
-              vx(d, i) = vx(d, i) + dt * dvx(d, i) + av(d, i)
-              x(d, i) = x(d, i) + dt * vx(d, i)       
-            enddo
+        if(u(i).lt.0)  u(i) = 0.         
+        do d = 1, dim                   
+          vx(d, i) = vx(d, i) + dt * dvx(d, i) + av(d, i)
+          x(d, i) = x(d, i) + dt * vx(d, i)       
+        enddo
 c            if(x(2,i).le.y_mingeom) then
 c               print *,i,vx(1,i),vx(2,i)
 c               print *,itimestep
 c               stop
 c             endif
-c            if (x(2,i).lt.x_mingeom+scale_k*hsml(i))then
-                vel = sqrt(vx(1,i)**2+vx(2,i)**2)
-                sumvel = sumvel + vel
-                if (vel.gt.maxvel)then
-                maxvel = vel
-                maxi = i
-                endif
-                if (vel.lt.minvel)then
-                minvel = vel
-                mini = i
-                endif
+         vel = sqrt(vx(1,i)**2+vx(2,i)**2)
+         sumvel = sumvel + vel
+         if (vel.gt.maxvel)then
+            maxvel = vel
+            maxi = i
+         endif
+         if (vel.lt.minvel)then
+            minvel = vel
+            mini = i    
+        endif
 c            endif
-       enddo
+      enddo
+c  keep the gate moving to a certain height
+       if(gate.and.itimestep.le.2000)then
+         do i = ntotal+nvirt-np*2+1,ntotal+nvirt
+             x(2,i) = x(2,i) + dt*vx(2,i)
+         enddo
+       endif
+c  dummy boundary
+      if(dummy) then
+        do i = 1,ntotal
+          do d = 1,dim
+          dvx(d,i)=-dvx(d,i)
+          if (d.eq.dim) dvx(d,i)= dvx(d,i)+9.8
+          enddo
+        enddo
+
+        do k = 1, niac
+           i = pair_i(k)
+           j = pair_j(k)
+           do d=1,dim
+             dx(d) = x(d,i)-x(d,j)
+           enddo
+           if (itype(j).lt.0) then
+             norp = dvx(1,i)*dx(1)
+             do d = 2,dim
+               norp = norp+dvx(d,i)*dx(d)
+             enddo  
+             p(j) = (p(i)*w(k)+norp*rho(i)*w(k))/wi(j)
+            endif
+        enddo
+
+        do i = ntotal+1,ntotal+nvirt
+           rho(i) = 1000*(p(i)/b+1)**(1/7)
+         enddo
+       endif
 
 
       if (mod(itimestep,save_step).eq.0) then
-c        open(30,file="../data/trace_p.dat")
+c       open(30,file="../data/trace_p.dat")
         open(40,file="../data/xv_vp.dat")
         open(50,file="../data/state_vp.dat")
         open(60,file="../data/other_vp.dat")            
         write(40,*) nvirt
         do i = ntotal + 1, ntotal + nvirt         
-          write(40,1004) i, (x(d, i), d=1,dim), (vx(d, i), d = 1, dim)              
-          write(50,1005) i, mass(i), rho(i), p(i), u(i)
-          write(60,1006) i, itype(i), hsml(i), mother(i)                               
+           write(40,1004) i, (x(d, i), d=1,dim), (vx(d, i), d = 1, dim)              
+           write(50,1005) i, mass(i), rho(i), p(i), u(i)
+           write(60,1006) i, itype(i), hsml(i), mother(i)                               
         enddo       
 1004    format(1x, I6, 4(2x, e14.8))
 1005    format(1x, I6, 4(2x, e14.8)) 

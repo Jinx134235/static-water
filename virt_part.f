@@ -26,13 +26,10 @@ c     integer, intent(out):: nvirt
 
       double precision hsml(maxn),mass(maxn),x(dim,maxn),vx(dim,maxn),
      &                 rho(maxn), u(maxn), p(maxn)
-      integer i, j, d, im, mp,np, scale_k, line1(2), line2(2), nwall
+      integer i, j, d, im, mp,np, scale_k, nnp, nwall
       double precision xl, dx, v_inf, tiny, b
 c      common nvirt
       real corner(2,4)
-c       corner=0.
-c      line1=(/2,4/)
-c      line2=(/3,4/)
 
       if (skf.eq.1) then 
         scale_k = 2 
@@ -62,12 +59,15 @@ c      line2=(/3,4/)
 c   in this case, the computing domain is defaultly set as square
        
 	nvirt = 0
-      mp = 1872
+      mp = 39
       np = 31
+      nnp = 104
 	xl = x_maxgeom-x_mingeom
 	dx = xl / mp
+c  speed of the gate(dambreak)/ speed of the top(cavityflow)        
+      v_inf = 1.5
 c      h = hsml(1)
-c   coordinate of the corners
+c   coordinates of the corners
       corner(:,1)=(/x_mingeom,y_mingeom/)
       corner(:,2)=(/x_maxgeom,y_mingeom/)
 c      print *,corner
@@ -86,19 +86,19 @@ c        enddo
 
 c     Monaghan type virtual particle on the Lower side
 
-        do i = 1, mp+1
-   	  nvirt = nvirt + 1
-	   x(1, ntotal + nvirt) = x_mingeom+(i-1)*dx
-          x(2, ntotal + nvirt) = y_mingeom  
-        enddo
+c        do i = 1, mp+1
+c   	  nvirt = nvirt + 1
+cc	   x(1, ntotal + nvirt) = x_mingeom+(i-1)*dx
+c          x(2, ntotal + nvirt) = y_mingeom  
+c        enddo
 
 c     Monaghan type virtual particle on the Left side
 
-        do i = 1, np
-   	  nvirt = nvirt + 1
- 	  x(1, ntotal + nvirt) = x_mingeom 
-         x(2, ntotal + nvirt) = y_mingeom+i*dx
-        enddo
+c        do i = 1, np
+c   	  nvirt = nvirt + 1
+c 	  x(1, ntotal + nvirt) = x_mingeom 
+c         x(2, ntotal + nvirt) = y_mingeom+i*dx
+c        enddo
 
 c     Monaghan type virtual particle on the Right side
 
@@ -108,22 +108,22 @@ c	  x(1, ntotal + nvirt) = xl
 c         x(2, ntotal + nvirt) = i*dx  
 c        enddo
 c    Monaghan type virtual particle as obsatacle 
-       do i = 1, 20
-          nvirt = nvirt + 1
-           x(1,ntotal+nvirt) = x_mingeom+(np+i)*dx
-          x(2,ntotal+nvirt) = y_mingeom+i*dx
-        enddo   
+c       do i = 1, 20
+c          nvirt = nvirt + 1
+c           x(1,ntotal+nvirt) = x_mingeom+(np+i)*dx
+c          x(2,ntotal+nvirt) = y_mingeom+i*dx
+c        enddo   
         nwall = nvirt
-	do i = 1, nvirt
-         vx(1, ntotal + i) = 0.
-	  vx(2, ntotal + i) = 0.
-	  if(itimestep.eq.1)rho (ntotal + i) = 1000.
-	     mass(ntotal + i) = rho (ntotal + i) * dx * dx
-          if(itimestep.eq.1) p(ntotal + i) = 0. 
-	   u(ntotal + i) = 357.1
-	   itype(ntotal + i) = 0
-	    hsml(ntotal + i) = 1.3*dx
-        enddo
+c	do i = 1, nvirt
+c         vx(1, ntotal + i) = 0.
+c	  vx(2, ntotal + i) = 0.
+c	  if(itimestep.eq.1)rho (ntotal + i) = 1000.
+c	     mass(ntotal + i) = rho (ntotal + i) * dx * dx
+c          if(itimestep.eq.1) p(ntotal + i) = 0. 
+c	   u(ntotal + i) = 357.1
+c	   itype(ntotal + i) = 0
+c	    hsml(ntotal + i) = 1.3*dx
+c        enddo
       else
 c--- staggered grid on the boundary, right-down-left
 c    upside        
@@ -132,8 +132,47 @@ c           nvirt = nvirt + 1
 c	      x(1, ntotal + nvirt) = (i-1)*dx
 c            x(2, ntotal + nvirt) = xl
 c        enddo
-     
-       do i = 1, np
+      if (static)then
+         do i = 1,mp+3
+            do j = 1,3
+            nvirt = nvirt + 1
+            x(1, ntotal+nvirt) = x_maxgeom+(j-1)*dx+dx/2
+            x(2, ntotal+nvirt) = y_maxgeom-(i-1)*dx-dx/2
+            enddo
+         enddo
+
+         do i = 1,mp+3
+            do j = 1,3
+            nvirt = nvirt + 1
+           x(1, ntotal+nvirt) = x_maxgeom-i*dx+dx/2
+            x(2, ntotal+nvirt) = y_mingeom-(j-1)*dx-dx/2
+            enddo
+         enddo
+
+         do i = 1,mp
+            do j = 1,3
+            nvirt = nvirt + 1
+           x(1, ntotal+nvirt) = x_mingeom-(j-1)*dx-dx/2
+            x(2, ntotal+nvirt) = y_mingeom+i*dx-dx/2
+            enddo
+         enddo
+
+        do i =1,nvirt
+          vx(1, ntotal + i) = 0.
+          vx(2, ntotal +i) = 0.
+          rho(ntotal + i) = 1000.
+          p(ntotal + i) = 9.8*1000*(y_maxgeom-x(2,ntotal+i))
+          mass(ntotal + i) = rho (ntotal + i) * dx * dx
+c       if(itimestep.eq.1)  p(ntotal + i)= 1000*9.8*(xl-x(2,ntotal+i))
+          u(ntotal + i) = 357.1
+          itype(ntotal + i) = -2
+          hsml(ntotal + i) = 1.3*dx
+        enddo
+
+      endif
+
+      if(dambreak)then     
+       do i = 1, nnp
           do j = 1,2
    	   nvirt = nvirt + 1
 	   x(1, ntotal + nvirt) = x_maxgeom+(j-1)*dx/2
@@ -158,7 +197,7 @@ c        enddo
            enddo 
        enddo
       
-      do i = 1, np
+      do i = 1, nnp
          do j =1,2
    	    nvirt = nvirt + 1
 	    x(1, ntotal + nvirt) = x_mingeom-(j-1)*dx/2
@@ -169,30 +208,32 @@ c        enddo
            endif
          enddo
       enddo
-     
-c     add four particles in the corner
-c      nvirt = nvirt +4
-c      x(1,ntotal + nvirt - 3) = -dx
-c      x(2,ntotal + nvirt - 3) = xl+dx/2
-c       x(1,ntotal + nvirt - 2) = xl+dx/2
-c      x(2,ntotal + nvirt - 2) = xl+dx
-c       x(1,ntotal + nvirt - 1) = xl+dx
-c      x(2,ntotal + nvirt - 1) = -dx/2
-c       x(1,ntotal + nvirt) = -dx/2
-c      x(2,ntotal + nvirt) = -dx
+      if (gate) then
+          do i = 1,2*np
+            nvirt = nvirt + 1
+            x(1,ntotal+nvirt) = damlength
+            x(2,ntotal+nvirt) = y_mingeom+i*dx/2
+            p(ntotal+nvirt) = 0
+             if(x(2,ntotal+nvirt).le.damheight) then
+             p(ntotal+nvirt)=9.8*1000*(damheight-x(2,ntotal+nvirt))
+            endif
+         enddo
+      endif
 
       do i = 1, nvirt
         vx(1, ntotal + i) = 0.
 	  vx(2, ntotal +i) = 0.
-c        if (i.le.mp+1)  vx(1, ntotal +i) = v_inf   
+         if (i.gt.nvirt-np*2)  vx(2, ntotal +i) = v_inf   
 c        vx(1,ntotal + nvirt - 2) = v_inf
-	 if(itimestep.eq.1)  rho(ntotal + i) = 1000.
+	  rho(ntotal + i) = 1000.
 	  mass(ntotal + i) = rho (ntotal + i) * dx * dx
 c       if(itimestep.eq.1)  p(ntotal + i)= 1000*9.8*(xl-x(2,ntotal+i))
 	  u(ntotal + i) = 357.1
 	  itype(ntotal + i) = -2
 	  hsml(ntotal + i) = 1.3*dx
         enddo
+       endif
+
       endif
 c     fixed ghost particles around the cavity, including particles in corner
       if (mirror) then
@@ -252,9 +293,10 @@ c   leftside
            u(ntotal + nvirt) = u(i)
            mother(ntotal + nvirt) = i
            endif
-
+c  mirror particles in corner
 
            do j=1,2
+c              print *,corner(:,j)
               if(abs(x(1,i)-corner(1,j)).lt.scale_k*hsml(i).and.
 c     &         abs(x(1,i)-corner(1,j)).ne.0.and.
      &         x(2,i)-corner(2,j).lt.scale_k*hsml(i)) then

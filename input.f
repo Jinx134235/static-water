@@ -48,9 +48,11 @@ c     load initial particle information from external disk file
        open(3,file="../data/ini_other.dat") 
        
       
-      call dam_break(x, vx, mass, rho, p, u, 
+      if(dambreak) call dam_break(x, vx, mass, rho, p, u, 
      &                      itype, hsml, ntotal)
-      
+      if(static) call static_water(x, vx, mass, rho, p, u,
+     &                      itype, hsml, ntotal)
+
         do i = 1, ntotal 
           write(1,1001) i, (x(d, i),d = 1, dim), (vx(d, i),d = 1, dim) 
           write(2,1002) i, mass(i), rho(i), p(i), u(i)         
@@ -102,7 +104,7 @@ c     np-- total particle number in one column                     [out]
 
 
       m = 1872
-      n = 31
+      n = 104
   
       xl = x_maxgeom-x_mingeom
       yl = y_maxgeom-y_mingeom
@@ -113,22 +115,30 @@ c     np-- total particle number in one column                     [out]
       np = int(damheight/dy)
       nnp = int(bedheight/dy)
       mmp = (x_maxgeom-damlength)/dx
-      ntotal = mp*np+mmp*nnp
+      ntotal = mp*np+(mp-1)*(np-1)+mmp*nnp
 
-c      print *,ntotal
+      print *,mp,np
 c   particles of dam part 
       do i = 1, mp
 	  do j = 1, np
 	      k = j + (i-1)*np
-	      x(1, k) = i*dx+x_mingeom
-	      x(2, k) = j*dy+y_mingeom
+	      x(1, k) = (i-1)*dx+dx/2+x_mingeom
+	      x(2, k) = (j-1)*dy+dy/2+y_mingeom
          enddo
       enddo
+c  staggered tencil
+      do i = 1,mp-1
+         do j = 1,np-1
+           k = mp*np + j +(i-1)*(np-1)
+           x(1,k) = i*dx+x_mingeom
+           x(2,k) = j*dy+y_mingeom
+         enddo
+      enddo 
     
 c  particles of  bed part
       do i = 1,mmp
         do j = 1,nnp
-         k = mp*np+j+(i-1)*nnp
+         k = mp*np+(mp-1)*(np-1)+j+(i-1)*nnp
          x(1,k) = damlength+dx/2+(i-1)*dx
          x(2,k) = y_mingeom+dy/2+(j-1)*dy
          enddo
@@ -153,5 +163,56 @@ c        rho(i)= 1000*(p(i)/20+1)**(1/7)
         hsml(i) = 1.3*dx
       enddo  
 
-      end	 
-      
+      end
+
+      subroutine static_water(x, vx, mass, rho, p, u,
+     &                        itype, hsml, ntotal)
+c---------------------------------------------------------------
+c   input for static water benchmark
+c   parameter list is the same as above, except for the digitals
+
+              
+      implicit none
+      include 'param.inc'
+
+      integer itype(maxn), ntotal
+      double precision x(dim, maxn), vx(dim, maxn), mass(maxn),
+     &     rho(maxn), p(maxn), u(maxn), hsml(maxn)
+      integer i, j, d, m, n, mp, np,k
+      double precision xl, yl, dx, dy
+
+      m = 39
+      n = 39
+
+      xl = x_maxgeom-x_mingeom
+      yl = y_maxgeom-y_mingeom
+
+      dx = xl/m
+      dy = yl/n
+      mp = m
+      np = n
+      ntotal = mp*np
+
+      do i = 1 , mp
+         do j= 1, np
+           k = j+(i-1)*np
+           x(1,k) = x_mingeom+(i-1)*dx+dx/2
+           x(2,k) = y_mingeom+(j-1)*dy+dy/2
+         enddo
+      enddo
+
+      do i = 1, ntotal
+        vx(1, i) = 0.
+        vx(2, i) = 0.
+c--- original density,pressure & mass of the particles    
+c--- zero pressure
+c        p(i) = 0
+        p(i) = 9.8*1000*(yl-x(2,i))
+        rho(i) = 1000
+        mass(i) = dx*dy*rho(i)
+        u(i)=357.1
+        itype(i) = 2
+        hsml(i) = 1.3*dx
+      enddo
+
+      end

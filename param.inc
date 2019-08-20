@@ -10,7 +10,7 @@ c     dim : Dimension of the problem (1, 2 or 3)
 c     maxn    : Maximum number of particles
 c     max_interation : Maximum number of interaction pairs
       integer maxn,max_interaction
-      parameter ( maxn    = 12000 ,
+      parameter ( maxn    = 30000 ,
      &            max_interaction = 100 * maxn )
 
 c     Parameters for the computational geometry,  
@@ -22,16 +22,16 @@ c     z_maxgeom : Upper limit of allowed z-regime
 c     z_mingeom : Lower limit of allowed z-regime 
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
-     &                 bedheight,damheight,damlength
-      parameter ( x_maxgeom =  9.36e0     ,
+     &                 damheight,damlength,bedheight
+      parameter ( x_maxgeom =  .39e0     ,
      &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  .156e0     ,
+     &            y_maxgeom =  .39e0     ,
      &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
-     &            bedheight =  0.e0    ,
      &            damheight =  .15e0    ,
-     &            damlength =  .38e0     )
+     &            damlength =  .38e0    ,
+     &            bedheight =  0.e0    )
     
 c     SPH algorithm for particle approximation (pa_sph)
 c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
@@ -55,7 +55,7 @@ c           3 : Other approaches (e.g. h = h_0 * (rho_0/rho)**(1/dim) )
       integer sle 
       parameter(sle = 0)
 
-c     Smoothing kernel function 
+c     Smoothing kernal
 c     skf = 1, cubic spline kernel by W4 - Spline (Monaghan 1985)
 c         = 2, Gauss kernel   (Gingold and Monaghan 1981) 
 c         = 3, Quintic kernel (Morris 1997)
@@ -64,9 +64,9 @@ c         = 3, Quintic kernel (Morris 1997)
 
 c     Density filter
 c     filt = 0, no filter
-c          = 1, Molteni and Colagrossi,2009
-c          = 2, Georgie and Jose,2019
-c	   = 3, Antuono,2010
+c          = 1, Moltine & Clagrossi,2009
+c          = 2, Georgios,2019
+c          = 3, Antuono.etc,2010
       integer filt
       parameter(filt = 0)
 
@@ -94,29 +94,32 @@ c     self_gravity = .true. : Considering self_gravity,
 c                    .false.: No considering of self_gravity
 c     nor_density =  .true. : Density normalization by using CSPM,
 c                    .false.: No normalization.
-c     dynamic= .true. : apply dynamic boundary into simulation,Crespo£¨2005£©
+c     dynamic= .ture. : apply dynamic boundary into simulation,Crespo£¨2005£©
 c              . false.: Fixed virtual particles
-c     mirror = .true.  :generate mirror particles
-c     filt_density = .true. : Applying density filter, Molteni,2009
+c     mirror = .ture. : add mirror particles to boundary                      
+c     gate = .true. : add moving gate in the dambreak simulation
+c     dummy = .true. : dummy boundary, working with dynamic boundary
 
       logical summation_density, average_velocity, config_input,
      &        virtual_part, vp_input, visc, ex_force, heat_artificial,
      &        visc_artificial, self_gravity, nor_density, dynamic,
-     &        mirror
+     &        mirror, gate, dummy
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .true. )
+      parameter ( average_velocity  = .false. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
-      parameter ( visc  = .true. )
-      parameter ( ex_force  = .true.)
-      parameter ( visc_artificial  = .false. )
+      parameter ( visc  = .false. )
+      parameter ( ex_force  = .false.)
+      parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .false. )      
+      parameter ( nor_density  = .true. )      
       parameter ( dynamic = .true. )
+      parameter ( gate = .false.  )
       parameter ( mirror = .false. )
+      parameter ( dummy = .false. )
 
 c     Symmetry of the problem
 c     nsym = 0 : no symmetry,
@@ -135,10 +138,14 @@ c     moni_particle: The particle number for information monitoring.
       parameter ( int_stat = .true. )
       integer print_step, save_step, moni_particle
       parameter ( print_step = 100,
-     &            save_step = 1,
-     &            moni_particle = 1600   )
-           
-      double precision pi, c0
+     &            save_step = 1 ) 
+
+      double precision pi,c0
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 18.1865 )
-     
+     &            c0 = 2.93249e1)
+
+c    Switch for different benchmarks
+      logical dambreak, static, cavity
+      parameter ( dambreak = .false.)
+      parameter ( static = .true.)
+      parameter ( cavity = .false.)

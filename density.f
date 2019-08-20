@@ -193,7 +193,7 @@ c   calculate renormalized gradient of density
       do i = 1,ntotal
          write (10,1001) i,wi(i)
        enddo
- 1001     format(2x, I4, 2x, e14.8)
+ 1001     format(2x, I6, 2x, e14.8)
       close(10)
 
 c     Secondly calculate the rho integration over the space
@@ -202,8 +202,8 @@ c     Secondly calculate the rho integration over the space
       enddo
      
       delta  = 0.1
-      c = 29.32
-      b = c**2*1000/7
+c      c = 29.32
+      b = c0**2*1000/7
       do k=1,niac      
         i = pair_i(k)
         j = pair_j(k)
