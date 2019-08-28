@@ -36,8 +36,9 @@ c     z_mingeom : Lower limit of allowed z-regime
 c     SPH algorithm for particle approximation (pa_sph)
 c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
 c              2 : (e.g. (p(i)/rho(i)**2+p(j)/rho(j)**2)
+c              3 : (e.g. (p(i)*rho(j)+p(j)*rho(i))/(rho(i)+rho(j))
       integer pa_sph 
-      parameter(pa_sph = 2)
+      parameter(pa_sph = 3)
 
 c     Nearest neighbor particle searching (nnps) method
 c     nnps = 1 : Simplest and direct searching
@@ -119,7 +120,7 @@ c     dummy = .true. : dummy boundary, working with dynamic boundary
       parameter ( dynamic = .true. )
       parameter ( gate = .false.  )
       parameter ( mirror = .false. )
-      parameter ( dummy = .false. )
+      parameter ( dummy = .true. )
 
 c     Symmetry of the problem
 c     nsym = 0 : no symmetry,

@@ -1,5 +1,6 @@
       subroutine int_force(itimestep,dt,ntotal,nvirt,hsml,mass,vx,niac,
-     &      rho,eta,pair_i,pair_j,dwdx,u,itype,x,t,c,p,dvxdt,tdsdt,dedt)
+     &      rho,eta,pair_i,pair_j,dwdx,u,itype,x,t,c,p,grap,dvxdt,tdsdt,
+     &      dedt)
 
 c----------------------------------------------------------------------
 c   Subroutine to calculate the internal forces on the right hand side 
@@ -30,7 +31,7 @@ c     p      : Particle pressure                                   [out]
 c     dvxdt  : Acceleration with respect to x, y and z             [out] 
 c     tdsdt  : Production of viscous entropy                       [out]
 c     dedt   : Change of specific internal energy                  [out]
-
+c     grap   : Pressure gradient of a single particle              [out]
       implicit none
       include 'param.inc'
       
@@ -41,11 +42,12 @@ c     dedt   : Change of specific internal energy                  [out]
      &       rho(maxn), eta(maxn), dwdx(3,max_interaction), u(maxn),
      &       x(dim,maxn), t(maxn), c(maxn), p(maxn), dvxdt(dim,maxn),          
      &       tdsdt(maxn),dedt(maxn),wi(maxn),hv(dim),selfdens,
-     &       w(max_interaction),grap(maxn)
+     &       w(max_interaction), grap(dim,maxn)
       integer i, j, k, d
       double precision  dvx(3), txx(maxn), tyy(maxn), tzz(maxn),
      &       txy(maxn), txz(maxn), tyz(maxn), vcc(maxn),
-     &       hxx, hyy, hzz, hxy, hxz, hyz, h, hvcc, he, rhoij, r
+     &       hxx, hyy, hzz, hxy, hxz, hyz, h, hvcc, he, rhoij, r,
+     &       dwdr,mp,meta,mvol
 
 c     Initialization of shear tensor, velocity divergence, 
 c     viscous energy, internal energy, acceleration 
@@ -63,6 +65,7 @@ c      print *,ntotal
         dedt(i) = 0.e0
         do d=1,dim
           dvxdt(d,i) = 0.e0
+          grap(d,i) = 0.e0
         enddo 
       enddo
 
@@ -161,7 +164,7 @@ c      and the internal energy change de/dt due to -p/rho vc,c
 c      do d=1,dim
 cc        hv(d) = 0.e0
 c      enddo
-c       r=0. 
+       r=0. 
    
 c       do i=1,ntotal
 c              call kernel(r,hv,hsml(i),selfdens,hv)
@@ -199,11 +202,12 @@ c        else
            j = pair_j(k)
 c          print *,i,j
            he = 0.e0
+         if(pa_sph.eq.1)then
           do d=1,dim                
             h = -(p(i)/rho(i)**2 + p(j)/rho(j)**2)*dwdx(d,k) 
-  
-            he = he + (vx(d,j) - vx(d,i))*h
-
+c     Pressure gradient term
+            grap(d,i) = grap(d,i) + mass(j)*h
+            grap(d,j) = grap(d,j) + mass(i)*h
 c     Viscous force
 
           if (visc) then             
@@ -248,16 +252,40 @@ c     z-coordinate of acceleration
            dvxdt(d,i) = dvxdt(d,i) + mass(j)*h
            dvxdt(d,j) = dvxdt(d,j) - mass(i)*h
           enddo
+       
+        elseif(pa_sph.eq.3) then
+          mp = (rho(i)*p(j)+rho(j)*p(i))/(rho(i)+rho(j))
+          meta = 2*eta(i)*eta(j)/(eta(i)+eta(j))
+          mvol = (mass(i)/rho(i))**2+(mass(j)/rho(j))**2
+          do d = 1,dim
+            r = r + (x(d,i)-x(d,j))**2
+            dwdr = dwdr + dwdx(d,k)*(x(d,j)-x(d,i))
+          enddo
+         
+          do d = 1,dim
+            h = -mvol*mp*dwdx(d,k)
+            grap(d,i) = grap(d,i)+h/mass(i)
+            grap(d,j) = grap(d,j)-h/mass(j)
+          if(visc)then
+            dvx(d) = vx(d,j)-vx(d,i)
+            h = h+meta*mvol*dvx(d)*dwdr/r
+           endif
+           dvxdt(d,i) = dvxdt(d,i) + h/mass(i)
+           dvxdt(d,j) = dvxdt(d,j) - h/mass(j)
+           enddo
+         endif
+c    Energy equation         
+         do d = 1,dim
+          he = he + (vx(d,j) - vx(d,i))*h
+         enddo
           dedt(i) = dedt(i) + mass(j)*he
-          dedt(j) = dedt(j) + mass(i)*he       
-        enddo
-c      endif
-      
-   
+          dedt(j) = dedt(j) + mass(i)*he
+      enddo  
+    
 c     Change of specific internal energy de/dt = T ds/dt - p/rho vc,c:
 
       do i=1,ntotal
-         grap(i) = dvxdt(dim,i)*rho(i)
+c         grap(i) = dvxdt(dim,i)*rho(i)
          dedt(i) = tdsdt(i) + 0.5e0*dedt(i)
 c       print *,i, grap(i)
       enddo

@@ -35,17 +35,18 @@ c     p_record :  Record the pressure of center                    [out]
      &        nstart, np
       double precision dt, hsml(maxn), mass(maxn), u(maxn), s(maxn), 
      &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn), du(maxn),
-     &        ds(maxn), drho(maxn)
+     &        ds(maxn), drho(maxn), pp(maxn)
       integer i, d,j,k,nvirt, niac, pair_i(max_interaction),mini,
      &        pair_j(max_interaction), ns(maxn), nwall, maxi,ntotalvirt,
-     &         mother(maxn)
+     &         mother(maxn),sumw(maxn)
 c      common nvirt
       double precision w(max_interaction), dwdx(3,max_interaction),  
      &       indvxdt(dim,maxn),exdvxdt(dim,maxn),ardvxdt(dim,maxn),  
      &       avdudt(maxn), ahdudt(maxn), c(maxn), eta(maxn),dis_x, 
-     &       dis_y, wi(maxn), nvx(dim,maxn), v_inf 
+     &       dis_y, wi(maxn), nvx(dim,maxn),grap(dim,maxn),egrd(maxn)
       double precision x(dim,maxn),vx(dim,maxn),dx(dim),dvx(dim,maxn),
-     &       av(dim,maxn), maxvel, b, minvel, vel,sumvel, norp                          
+     &       av(dim,maxn), maxvel, b, minvel, vel,sumvel, norp,
+     &       kai,v_inf                          
      
 
       do i=1,ntotal
@@ -61,14 +62,13 @@ c      common nvirt
       np = 31   
       b = c0**2*1000/7
       v_inf = 0.
+      kai = 0.
 c---  Positions of virtual (boundary) particles:
 c---  call virt_part only once when implying dynamic boundary
        if(dynamic)then
-         if(itimestep.eq.1)then 
-         call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
-     &       rho,u,p,itype, nwall,mother)
-          endif
-
+         if(itimestep.eq.1) call virt_part(itimestep, ntotal,nvirt,hsml,
+     &       mass,x,vx,rho,u,p,itype, nwall,mother)
+          
        else
          call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
@@ -123,18 +123,21 @@ c   normalized velocity
          do k = 1,niac
             i = pair_i(k)
             j = pair_j(k)
-            if (itype(j).lt.0)then
+            if (itype(j).lt.0.and.itype(i).gt.0)then
               do d= 1,dim
-                nvx(d,j) = nvx(d,j)+vx(d,i)*w(k)/wi(j)
+                nvx(d,j) = nvx(d,j)+vx(d,i)*w(k)
               enddo
+              sumw(j) = sumw(j)+w(k)
             endif
          enddo
          do i = ntotal+1,ntotal+nvirt
-           do d = 1,dim 
-            vx(d,i) = 2*v_inf-nvx(d,i)
+           if(i.eq.ntotal+1) print *,nvx(1,i)
+           do d = 1,dim
+             if (sumw(i).ne.0)then 
+             vx(d,i) = 2*v_inf-nvx(d,i)/sumw(i)
+             endif
            enddo
          enddo
-
 c       if (nor_density.and.mod(itimestep,30).eq.0) then      
 c        call sum_density(ntotal+nvirt,hsml,mass,niac,pair_i,pair_j,w,
 c     &       itype,rho)
@@ -143,7 +146,11 @@ c     &       itype,rho)
            rho(i)=rho(i)+dt*drho(i)
            call p_art_water(rho(i),x(2,i),c(i),p(i))
           enddo
-
+c  Shepard filter
+          if (nor_density.and.mod(itimestep,30).eq.0) then      
+           call sum_density(ntotalvirt,hsml,mass,niac,pair_i,pair_j,w,
+     &        itype,rho)
+           endif
          endif
       else
        do i = 1,ntotal              
@@ -151,7 +158,7 @@ c     &       itype,rho)
           call p_art_water(rho(i),x(2,i),c(i),p(i))   
        enddo
 c  Shepard filter
-       if (nor_density.and.mod(itimestep,20).eq.0) then      
+       if (nor_density.and.mod(itimestep,30).eq.0) then      
          call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
      &        itype,rho)         
        endif
@@ -176,8 +183,11 @@ c---  Dynamic viscosity:
 c---  Internal forces:(4.42)/(4.43)  4.58/4.59
  
       call int_force(itimestep,dt,ntotal,nvirt,hsml,mass,vx,niac,rho,
-     &     eta, pair_i,pair_j,dwdx,u,itype,x,t,c,p,indvxdt,tdsdt,du) 
-                  
+     &     eta, pair_i,pair_j,dwdx,u,itype,x,t,c,p,grap,indvxdt,
+     &     tdsdt,du)
+
+c      print *,grap(1,1),grap(2,1) 
+
 c---  Artificial viscosity:(4.66)
 
       if (visc_artificial) call art_visc(ntotalvirt,hsml,
@@ -189,7 +199,8 @@ c---  Artificial viscosity:(4.66)
 c---  Internal forces:
  
          call int_force(itimestep,dt,ntotal,nvirt,hsml,mass,vx,niac,rho,
-     &     eta, pair_i,pair_j,dwdx,u,itype,x,t,c,p,indvxdt,tdsdt,du) 
+     &     eta, pair_i,pair_j,dwdx,u,itype,x,t,c,p,grap,indvxdt,
+     &     tdsdt,du) 
                   
 c---  Artificial viscosity:
 
@@ -215,6 +226,39 @@ c     Calculating average velocity of each partile for avoiding penetration (4.9
          if (average_velocity) call av_vel(ntotal,mass,niac,pair_i,
      &                           pair_j, w, vx, rho, av) 
 c---  Convert velocity, force, and energy to f and dfdt  
+c---  Correction for dummy particles(pressure & density)
+       if(dummy) then
+        do i = 1,ntotal
+          do d = 1,dim
+          grap(d,i)=-grap(d,i)
+          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
+          enddo
+        enddo
+
+        do k = 1, niac
+           i = pair_i(k)
+           j = pair_j(k)
+           if (itype(j).lt.0.and.itype(i).gt.0) then
+
+             pp(j) = pp(j) + p(i)*w(k)
+             do d= 1,dim
+               dx(d) = x(d,i)-x(d,j)
+              egrd(j) = egrd(j)+rho(i)*dx(d)*grap(d,i)*w(k)
+              enddo
+            endif
+        enddo
+
+        do i = ntotal+1,ntotal+nvirt
+          if(sumw(i).ne.0)then
+           p(i) = (pp(i)+egrd(i))/sumw(i)
+c    background pressure   
+           kai = 1000*9.8*(y_maxgeom-x(2,i))
+           rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
+          endif
+         enddo
+
+C         print *,p(ntotal+1),rho(ntotal+1)
+       endif
      
       maxvel = 0.e0
       minvel = 1.e1
@@ -259,35 +303,7 @@ c  keep the gate moving to a certain height
          do i = ntotal+nvirt-np*2+1,ntotal+nvirt
              x(2,i) = x(2,i) + dt*vx(2,i)
          enddo
-       endif
-c  dummy boundary
-      if(dummy) then
-        do i = 1,ntotal
-          do d = 1,dim
-          dvx(d,i)=-dvx(d,i)
-          if (d.eq.dim) dvx(d,i)= dvx(d,i)+9.8
-          enddo
-        enddo
-
-        do k = 1, niac
-           i = pair_i(k)
-           j = pair_j(k)
-           do d=1,dim
-             dx(d) = x(d,i)-x(d,j)
-           enddo
-           if (itype(j).lt.0) then
-             norp = dvx(1,i)*dx(1)
-             do d = 2,dim
-               norp = norp+dvx(d,i)*dx(d)
-             enddo  
-             p(j) = (p(i)*w(k)+norp*rho(i)*w(k))/wi(j)
-            endif
-        enddo
-
-        do i = ntotal+1,ntotal+nvirt
-           rho(i) = 1000*(p(i)/b+1)**(1/7)
-         enddo
-       endif
+      endif
 
 
       if (mod(itimestep,save_step).eq.0) then
@@ -309,8 +325,6 @@ c       open(30,file="../data/trace_p.dat")
         close(60) 
       endif 
      
-
-
       if (mod(itimestep,print_step).eq.0) then      
           write(*,*) '**** particle moving fastest ****', maxi, maxvel         
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   

@@ -133,16 +133,16 @@ c	      x(1, ntotal + nvirt) = (i-1)*dx
 c            x(2, ntotal + nvirt) = xl
 c        enddo
       if (static)then
-         do i = 1,mp+3
-            do j = 1,3
+         do i = 1,mp+1
+            do j = 1,2
             nvirt = nvirt + 1
             x(1, ntotal+nvirt) = x_maxgeom+(j-1)*dx+dx/2
             x(2, ntotal+nvirt) = y_maxgeom-(i-1)*dx-dx/2
             enddo
          enddo
 
-         do i = 1,mp+3
-            do j = 1,3
+         do i = 1,mp+1
+            do j = 1,2
             nvirt = nvirt + 1
            x(1, ntotal+nvirt) = x_maxgeom-i*dx+dx/2
             x(2, ntotal+nvirt) = y_mingeom-(j-1)*dx-dx/2
@@ -150,13 +150,18 @@ c        enddo
          enddo
 
          do i = 1,mp
-            do j = 1,3
+            do j = 1,2
             nvirt = nvirt + 1
            x(1, ntotal+nvirt) = x_mingeom-(j-1)*dx-dx/2
             x(2, ntotal+nvirt) = y_mingeom+i*dx-dx/2
             enddo
          enddo
-
+c    add two particles in bottom corner
+        nvirt = nvirt+2
+        x(1,ntotal+nvirt) = x_maxgeom+dx/2
+        x(2,ntotal+nvirt) = y_mingeom-3*dx/2
+        x(1,ntotal+nvirt-1) = x_mingeom-3*dx/2
+        x(2,ntotal+nvirt-1) = y_mingeom-dx/2
         do i =1,nvirt
           vx(1, ntotal + i) = 0.
           vx(2, ntotal +i) = 0.

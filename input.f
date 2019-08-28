@@ -63,7 +63,7 @@ c     load initial particle information from external disk file
 1003    format(1x, I5, 2x, I2, 2x, e14.8) 
         write(*,*)'  **************************************************'
         write(*,*)'      Initial particle configuration generated   '       
-        write(*,*)'      Total number of particles   ', ntotal    	
+        write(*,*)'      Total number of particles(fluid)   ', ntotal    	
         write(*,*)'  **************************************************' 
 
       endif
