@@ -33,10 +33,11 @@ c      dt-- timestep                                             [input]
       double precision  x_min(dim, maxn), v_min(dim, maxn), u_min(maxn),
      &       rho_min(maxn), dx(dim,maxn), dvx(dim, maxn), du(maxn),  
      &       drho(maxn),  av(dim, maxn), ds(maxn),
-     &       t(maxn), tdsdt(maxn), temp_u, temp_rho 
+     &       t(maxn), tdsdt(maxn), temp_u, temp_rho, sumvel 
       double precision  time
-      real, allocatable:: p_record(:)
+      real, allocatable:: p_record(:),v_record(:)
       allocate(p_record(200))
+      allocate(v_record(200))
 c      common nvirt
                
       do i = 1, ntotal
@@ -45,7 +46,6 @@ c      common nvirt
         enddo
       enddo  
      
-c      nvirt = 0
       nstart = current_ts
       do itimestep = nstart+1, nstart+maxtimestep   
 	   
@@ -62,26 +62,27 @@ c        time=current_ts*dt
 c---  Definition of variables out of the function vector:    
       
         call single_step(itimestep,nstart, dt, ntotal,nvirt, hsml, mass,
-     &        x, vx,u, s, rho, p, t, tdsdt, dx,dvx, du, ds, drho, itype,
-     &        av, niac, pair_i, pair_j)  
+     &        x, vx,u, s, rho, p, t, tdsdt, du, ds,  itype, av, niac,
+     &        pair_i, pair_j, sumvel)  
                   
         if (mod(itimestep,print_step).eq.0) then
 c              p_record(1) = itimestep
              i = itimestep/print_step 
              p_record(i) = p(int(ntotal/2))
+             v_record(i) = sumvel/ntotal
         endif
 c        print *,vx(2,1)
 c        if (vx(2,1).gt.0) then
 c            print *,itimestep
 c        endif
 
-         if(dynamic) then
-           do i=1,nvirt
-                 rho(ntotal+i) = rho(ntotal+i) + dt*drho(ntotal+i)
-               call p_art_water(rho(ntotal+i),x(2,ntotal+i),c(ntotal+i),
-     &         p(ntotal+i))
-            enddo
-         endif
+c         if(dynamic) then
+c           do i=1,nvirt
+c                 rho(ntotal+i) = rho(ntotal+i) + dt*drho(ntotal+i)
+c               call p_art_water(rho(ntotal+i),x(2,ntotal+i),c(ntotal+i),
+c     &         p(ntotal+i))
+c            enddo
+c         endif
       
 c---  Judge if the system achieves the balancing point      
 c      if  (abs(p(1)-9.8e3*(y_maxgeom-x(2,1))).le.10) then
@@ -92,12 +93,12 @@ c      endif
         time = time + dt
 
         if(itimestep.eq.nstart+maxtimestep) then
-             open(20,file="../data/pcenter.dat")
+             open(20,file="../data/record.dat")
              do i =1,(nstart+maxtimestep)/print_step
                 step = i*print_step
-                write(20,1002) step, p_record(i)
+                write(20,1002) step, p_record(i),v_record(i)
              enddo
-1002    format(1x, I6, 2x, e14.8)
+1002    format(1x, I6, 2x, e14.8,2x,e14.8)
         close(20)
         endif        
 
@@ -119,4 +120,5 @@ c100     format(1x,3(2x,e12.6))
 c      print *,current_ts
       
       deallocate(p_record)
+      deallocate(v_record)
       end

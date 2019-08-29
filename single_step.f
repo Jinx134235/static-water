@@ -1,6 +1,6 @@
       subroutine single_step(itimestep,nstart, dt, ntotal, nvirt,hsml, 
-     &           mass, x, vx,u, s,rho, p, t, tdsdt,dx,dvx, du, ds, drho, 
-     &           itype, av, niac, pair_i, pair_j) 
+     &           mass, x, vx,u, s,rho, p, t, tdsdt, du,ds,
+     &           itype, av, niac, pair_i, pair_j, sumvel) 
 
 c----------------------------------------------------------------------
 c   Subroutine to determine the right hand side of a differential 
@@ -12,22 +12,20 @@ c     dt       : Timestep                                           [in]
 c     ntotal   :  Number of particles                               [in]
 c     hsml     :  Smoothing Length                                  [in]
 c     mass     :  Particle masses                                   [in]
-c     x        :  Particle position                                 [in]
-c     vx       :  Particle velocity                                 [in]
+c     x        :  Particle position                             [in/out]
+c     vx       :  Particle velocity                             [in/out]
 c     u        :  Particle internal energy                          [in]
 c     s        :  Particle entropy (not used here)                  [in]
 c     rho      :  Density                                       [in/out]
 c     p        :  Pressure                                         [out]
 c     t        :  Temperature                                   [in/out]
 c     tdsdt    :  Production of viscous entropy t*ds/dt            [out]
-c     dx       :  dx = vx = dx/dt                                  [out]
-c     dvx      :  dvx = dvx/dt, force per unit mass                [out]
 c     du       :  du  = du/dt                                      [out]
 c     ds       :  ds  = ds/dt                                      [out]     
 c     drho     :  drho =  drho/dt                                  [out]
 c     itype    :  Type of particle                                 [in]
 c     av       :  Monaghan average velocity                        [out]
-c     p_record :  Record the pressure of center                    [out]
+c     sumvel   :  Summation of velocity                            [out]
       implicit none
       include 'param.inc'
 
@@ -35,10 +33,10 @@ c     p_record :  Record the pressure of center                    [out]
      &        nstart, np
       double precision dt, hsml(maxn), mass(maxn), u(maxn), s(maxn), 
      &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn), du(maxn),
-     &        ds(maxn), drho(maxn), pp(maxn)
+     &        ds(maxn), drho(maxn), pp(maxn),sumw(maxn)
       integer i, d,j,k,nvirt, niac, pair_i(max_interaction),mini,
      &        pair_j(max_interaction), ns(maxn), nwall, maxi,ntotalvirt,
-     &         mother(maxn),sumw(maxn)
+     &         mother(maxn)
 c      common nvirt
       double precision w(max_interaction), dwdx(3,max_interaction),  
      &       indvxdt(dim,maxn),exdvxdt(dim,maxn),ardvxdt(dim,maxn),  
@@ -46,16 +44,22 @@ c      common nvirt
      &       dis_y, wi(maxn), nvx(dim,maxn),grap(dim,maxn),egrd(maxn)
       double precision x(dim,maxn),vx(dim,maxn),dx(dim),dvx(dim,maxn),
      &       av(dim,maxn), maxvel, b, minvel, vel,sumvel, norp,
-     &       kai,v_inf                          
+     &       kai,v_inf,cita                          
      
 
-      do i=1,ntotal
+      do i=1,maxn
         avdudt(i) = 0.
         ahdudt(i) = 0.
+        sumw(i) = 0.
+        pp(i) = 0.
+        egrd(i) = 0.
         do  d=1,dim
           indvxdt(d,i) = 0.
           ardvxdt(d,i) = 0.
           exdvxdt(d,i) = 0.
+          nvx(d,i) = 0.
+          grap(d,i) = 0.
+
         enddo
       enddo  
 
@@ -63,6 +67,7 @@ c      common nvirt
       b = c0**2*1000/7
       v_inf = 0.
       kai = 0.
+      cita = 0.
 c---  Positions of virtual (boundary) particles:
 c---  call virt_part only once when implying dynamic boundary
        if(dynamic)then
@@ -91,7 +96,7 @@ c     and optimzing smoothing length
          close(15)  
       endif
      
-      ntotalvirt = ntotal + nvirt
+      ntotalvirt = ntotal + nvirt 
 c      print *,ntotal,nvirt
       if (nnps.eq.1) then 
         call direct_find(itimestep, ntotal,nvirt, hsml,x,niac,pair_i,
@@ -108,19 +113,28 @@ c     &       pair_j,w,dwdx,ns)
 c---  Density approximation or change rate
 c---  summation_density:(4.26)
 c---  con_density: calculting density through continuity equation (4.31)/(4.34)      
- 
-  
+      if(dummy)then 
+         do i = 1,nvirt
+           vx(1,ntotal+i) = v_inf
+           vx(2,ntotal+i) = v_inf
+         enddo
+      endif
+
       call con_density(ntotal+nvirt,mass,niac,pair_i,pair_j,
      &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
    
       if (dynamic) then
-         if(dummy) then
-         do i = 1,ntotal
+          do i = 1,ntotalvirt
            rho(i)=rho(i)+dt*drho(i)
            call p_art_water(rho(i),x(2,i),c(i),p(i))
-         enddo
-c   normalized velocity
-         do k = 1,niac
+          enddo
+c  Shepard filter
+          if (nor_density.and.mod(itimestep,30).eq.0) then      
+           call sum_density(ntotalvirt,hsml,mass,niac,pair_i,pair_j,w,
+     &        itype,rho)
+           endif
+       if (dummy) then    
+        do k = 1,niac
             i = pair_i(k)
             j = pair_j(k)
             if (itype(j).lt.0.and.itype(i).gt.0)then
@@ -131,27 +145,15 @@ c   normalized velocity
             endif
          enddo
          do i = ntotal+1,ntotal+nvirt
-           if(i.eq.ntotal+1) print *,nvx(1,i)
+c           if(i.eq.ntotal+1) print *,nvx(1,i),sumw(i)
            do d = 1,dim
-             if (sumw(i).ne.0)then 
+             if (sumw(i).ne.0)then
              vx(d,i) = 2*v_inf-nvx(d,i)/sumw(i)
              endif
            enddo
          enddo
-c       if (nor_density.and.mod(itimestep,30).eq.0) then      
-c        call sum_density(ntotal+nvirt,hsml,mass,niac,pair_i,pair_j,w,
-c     &       itype,rho)
-         else
-          do i = 1,ntotal+nvirt
-           rho(i)=rho(i)+dt*drho(i)
-           call p_art_water(rho(i),x(2,i),c(i),p(i))
-          enddo
-c  Shepard filter
-          if (nor_density.and.mod(itimestep,30).eq.0) then      
-           call sum_density(ntotalvirt,hsml,mass,niac,pair_i,pair_j,w,
-     &        itype,rho)
-           endif
-         endif
+      endif
+
       else
        do i = 1,ntotal              
           rho(i) = rho(i) + dt*drho(i)	 
@@ -227,38 +229,38 @@ c     Calculating average velocity of each partile for avoiding penetration (4.9
      &                           pair_j, w, vx, rho, av) 
 c---  Convert velocity, force, and energy to f and dfdt  
 c---  Correction for dummy particles(pressure & density)
-       if(dummy) then
-        do i = 1,ntotal
-          do d = 1,dim
-          grap(d,i)=-grap(d,i)
-          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
-          enddo
-        enddo
+c       if(dummy) then
+c        do i = 1,ntotal
+c          do d = 1,dim
+c          grap(d,i)=-grap(d,i)
+c          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
+c          enddo
+c       enddo
 
-        do k = 1, niac
-           i = pair_i(k)
-           j = pair_j(k)
-           if (itype(j).lt.0.and.itype(i).gt.0) then
+c        do k = 1, niac
+c           i = pair_i(k)
+c           j = pair_j(k)
+cc           if (itype(j).lt.0.and.itype(i).gt.0) then
 
-             pp(j) = pp(j) + p(i)*w(k)
-             do d= 1,dim
-               dx(d) = x(d,i)-x(d,j)
-              egrd(j) = egrd(j)+rho(i)*dx(d)*grap(d,i)*w(k)
-              enddo
-            endif
-        enddo
+c             pp(j) = pp(j) + p(i)*w(k)
+c             do d= 1,dim
+c               dx(d) = x(d,j)-x(d,i)
+c              egrd(j) = egrd(j)+rho(i)*dx(d)*grap(d,i)*w(k)
+c              enddo
+c            endif
+c        enddo
 
-        do i = ntotal+1,ntotal+nvirt
-          if(sumw(i).ne.0)then
-           p(i) = (pp(i)+egrd(i))/sumw(i)
+c        do i = ntotal+1,ntotal+nvirt
+c          if(sumw(i).ne.0)then
+c           p(i) = (pp(i)+egrd(i))/sumw(i)
 c    background pressure   
-           kai = 1000*9.8*(y_maxgeom-x(2,i))
-           rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
-          endif
-         enddo
+c          kai = 1000*9.8*(y_maxgeom-x(2,i))
+c           rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
+c          endif
+c         enddo
 
-C         print *,p(ntotal+1),rho(ntotal+1)
-       endif
+c         print *,p(ntotal+1),rho(ntotal+1)
+c       endif
      
       maxvel = 0.e0
       minvel = 1.e1
@@ -271,7 +273,12 @@ c          dvx(1,i)=0
         enddo
 c        gravity
         if (self_gravity) then
-          dvx(dim, i) = dvx(dim,i)-9.8
+             if(dummy.and.itimestep*dt.le.damp_t)then
+               cita = 0.5*(sin((-0.5+itimestep*dt/damp_t)*pi)+1)
+               dvx(dim, i) = dvx(dim,i)-9.8*cita
+            else
+               dvx(dim,i) = dvx(dim,i)-9.8
+            endif
          endif
 
           du(i) = du(i) + avdudt(i) + ahdudt(i)

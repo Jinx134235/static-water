@@ -27,7 +27,7 @@ c     integer, intent(out):: nvirt
       double precision hsml(maxn),mass(maxn),x(dim,maxn),vx(dim,maxn),
      &                 rho(maxn), u(maxn), p(maxn)
       integer i, j, d, im, mp,np, scale_k, nnp, nwall
-      double precision xl, dx, v_inf, tiny, b
+      double precision xl, dx, v_gate, tiny, b
 c      common nvirt
       real corner(2,4)
 
@@ -65,7 +65,7 @@ c   in this case, the computing domain is defaultly set as square
 	xl = x_maxgeom-x_mingeom
 	dx = xl / mp
 c  speed of the gate(dambreak)/ speed of the top(cavityflow)        
-      v_inf = 1.5
+      v_gate = 1.5
 c      h = hsml(1)
 c   coordinates of the corners
       corner(:,1)=(/x_mingeom,y_mingeom/)
@@ -133,16 +133,16 @@ c	      x(1, ntotal + nvirt) = (i-1)*dx
 c            x(2, ntotal + nvirt) = xl
 c        enddo
       if (static)then
-         do i = 1,mp+1
-            do j = 1,2
+         do i = 1,mp+3
+            do j = 1,3
             nvirt = nvirt + 1
             x(1, ntotal+nvirt) = x_maxgeom+(j-1)*dx+dx/2
             x(2, ntotal+nvirt) = y_maxgeom-(i-1)*dx-dx/2
             enddo
          enddo
 
-         do i = 1,mp+1
-            do j = 1,2
+         do i = 1,mp+3
+            do j = 1,3
             nvirt = nvirt + 1
            x(1, ntotal+nvirt) = x_maxgeom-i*dx+dx/2
             x(2, ntotal+nvirt) = y_mingeom-(j-1)*dx-dx/2
@@ -150,23 +150,23 @@ c        enddo
          enddo
 
          do i = 1,mp
-            do j = 1,2
+            do j = 1,3
             nvirt = nvirt + 1
            x(1, ntotal+nvirt) = x_mingeom-(j-1)*dx-dx/2
             x(2, ntotal+nvirt) = y_mingeom+i*dx-dx/2
             enddo
          enddo
 c    add two particles in bottom corner
-        nvirt = nvirt+2
-        x(1,ntotal+nvirt) = x_maxgeom+dx/2
-        x(2,ntotal+nvirt) = y_mingeom-3*dx/2
-        x(1,ntotal+nvirt-1) = x_mingeom-3*dx/2
-        x(2,ntotal+nvirt-1) = y_mingeom-dx/2
+c        nvirt = nvirt+2
+c        x(1,ntotal+nvirt) = x_maxgeom+dx/2
+c        x(2,ntotal+nvirt) = y_mingeom-3*dx/2
+c        x(1,ntotal+nvirt-1) = x_mingeom-3*dx/2
+c        x(2,ntotal+nvirt-1) = y_mingeom-dx/2
         do i =1,nvirt
           vx(1, ntotal + i) = 0.
           vx(2, ntotal +i) = 0.
           rho(ntotal + i) = 1000.
-          p(ntotal + i) = 9.8*1000*(y_maxgeom-x(2,ntotal+i))
+          p(ntotal + i) = 0.
           mass(ntotal + i) = rho (ntotal + i) * dx * dx
 c       if(itimestep.eq.1)  p(ntotal + i)= 1000*9.8*(xl-x(2,ntotal+i))
           u(ntotal + i) = 357.1
@@ -228,7 +228,7 @@ c       if(itimestep.eq.1)  p(ntotal + i)= 1000*9.8*(xl-x(2,ntotal+i))
       do i = 1, nvirt
         vx(1, ntotal + i) = 0.
 	  vx(2, ntotal +i) = 0.
-         if (i.gt.nvirt-np*2)  vx(2, ntotal +i) = v_inf   
+         if (i.gt.nvirt-np*2)  vx(2, ntotal +i) = v_gate  
 c        vx(1,ntotal + nvirt - 2) = v_inf
 	  rho(ntotal + i) = 1000.
 	  mass(ntotal + i) = rho (ntotal + i) * dx * dx

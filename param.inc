@@ -38,7 +38,7 @@ c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
 c              2 : (e.g. (p(i)/rho(i)**2+p(j)/rho(j)**2)
 c              3 : (e.g. (p(i)*rho(j)+p(j)*rho(i))/(rho(i)+rho(j))
       integer pa_sph 
-      parameter(pa_sph = 3)
+      parameter(pa_sph = 1)
 
 c     Nearest neighbor particle searching (nnps) method
 c     nnps = 1 : Simplest and direct searching
@@ -120,7 +120,7 @@ c     dummy = .true. : dummy boundary, working with dynamic boundary
       parameter ( dynamic = .true. )
       parameter ( gate = .false.  )
       parameter ( mirror = .false. )
-      parameter ( dummy = .true. )
+      parameter ( dummy = .false. )
 
 c     Symmetry of the problem
 c     nsym = 0 : no symmetry,
@@ -141,9 +141,13 @@ c     moni_particle: The particle number for information monitoring.
       parameter ( print_step = 100,
      &            save_step = 1 ) 
 
-      double precision pi,c0
+c    Some constant
+c    c0: sound speed according to a*sqrt(g*h),a:10~20
+c    damp_t: damping time in damping technique     
+      double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 2.93249e1)
+     &            c0 = 3.50999e1,   
+     &            damp_t = 0.2 )
 
 c    Switch for different benchmarks
       logical dambreak, static, cavity

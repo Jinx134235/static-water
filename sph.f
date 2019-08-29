@@ -32,7 +32,7 @@ c     e-- total energy of particles                                [out]
       
       call input(x, vx, mass, rho, p, u, itype, hsml, ntotal)     
 c     timestep according to CFL condition, crount number =0.2
-      dt = 7.8e-5
+      dt = 8.0e-5
       write(*,*)'timestep(s):', real(dt)
   1   write(*,*)'  ***************************************************' 
       write(*,*)'          Please input the maximal time steps        '

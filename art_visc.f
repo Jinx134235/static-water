@@ -37,7 +37,7 @@ c     Shear viscosity
       parameter( alpha = 1.e0   )
      
 c     Bulk viscosity
-      parameter( beta  = 1.e0  ) 
+      parameter( beta  = 0.e0  ) 
       
 c     Parameter to avoid singularities
       parameter( etq   = 1.e-2 )

@@ -206,8 +206,8 @@ c   parameter list is the same as above, except for the digitals
         vx(2, i) = 0.
 c--- original density,pressure & mass of the particles    
 c--- zero pressure
-c        p(i) = 0
-        p(i) = 9.8*1000*(yl-x(2,i))
+        p(i) = 0
+c        p(i) = 9.8*1000*(yl-x(2,i))
         rho(i) = 1000
         mass(i) = dx*dy*rho(i)
         u(i)=357.1
