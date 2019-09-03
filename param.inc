@@ -95,11 +95,11 @@ c     self_gravity = .true. : Considering self_gravity,
 c                    .false.: No considering of self_gravity
 c     nor_density =  .true. : Density normalization by using CSPM,
 c                    .false.: No normalization.
-c     dynamic= .ture. : apply dynamic boundary into simulation,Crespo£¨2005£©
-c              . false.: Fixed virtual particles
-c     mirror = .ture. : add mirror particles to boundary                      
-c     gate = .true. : add moving gate in the dambreak simulation
-c     dummy = .true. : dummy boundary, working with dynamic boundary
+c     dynamic= .true. : apply dynamic boundary into simulation,Crespo £¨2005
+c     mirror = .true. : mirror boundary                      
+c     gate = .true. : add moving gate in the dambreak simulation,only 
+c                     for dynamic
+c     dummy = .true. : dummy boundary
 
       logical summation_density, average_velocity, config_input,
      &        virtual_part, vp_input, visc, ex_force, heat_artificial,
@@ -107,7 +107,7 @@ c     dummy = .true. : dummy boundary, working with dynamic boundary
      &        mirror, gate, dummy
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .false. )
+      parameter ( average_velocity  = .true. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
@@ -117,9 +117,9 @@ c     dummy = .true. : dummy boundary, working with dynamic boundary
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
       parameter ( nor_density  = .true. )      
-      parameter ( dynamic = .true. )
+      parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
-      parameter ( mirror = .false. )
+      parameter ( mirror = .true. )
       parameter ( dummy = .false. )
 
 c     Symmetry of the problem
@@ -146,7 +146,7 @@ c    c0: sound speed according to a*sqrt(g*h),a:10~20
 c    damp_t: damping time in damping technique     
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 3.50999e1,   
+     &            c0 = 2.632425e1,   
      &            damp_t = 0.2 )
 
 c    Switch for different benchmarks

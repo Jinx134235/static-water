@@ -119,6 +119,6 @@ c100     format(1x,3(2x,e12.6))
       enddo
 c      print *,current_ts
       
-      deallocate(p_record)
       deallocate(v_record)
+      deallocate(p_record)
       end

@@ -216,3 +216,84 @@ c        p(i) = 9.8*1000*(yl-x(2,i))
       enddo
 
       end
+
+
+      subroutine two_phase(x, vx, mass, rho, p, u,
+     &                        itype, hsml, ntotal)
+c---------------------------------------------------------------
+c   input for static water benchmark with two phases, and an obstacle
+c   on the wall, which can be in any geomatrical shape.In this case,we
+c   choose it as isoceles right triangle
+c   parameter list is the same as above, except for the digitals
+
+c   mp:rows of particle above the obstacle
+c   np:rows of particle below the obstacle
+c   qp:colums of particle right below the obstacle
+c   hp:rows of praticle in high-density domain 
+
+      implicit none
+      include 'param.inc'
+
+      integer itype(maxn), ntotal
+      double precision x(dim, maxn), vx(dim, maxn), mass(maxn),
+     &     rho(maxn), p(maxn), u(maxn), hsml(maxn)
+      integer i, j, d, m, n, mp, np,qp,hp,k
+      double precision xl, yl, dx, dy
+
+
+      m = 130
+      n = 65
+
+      dx = (x_maxgeom-x_mingeom)/m
+      dy = (y_maxgeom-y_mingeom)/n
+      
+      mp = 10
+      np = 50
+      qp = 15
+c     hp = 45
+      ntotal = m*(mp+np)-qp*(qp+1)/2
+      
+      do i = 1,qp
+         do j = 1,np-qp+i-1
+           k = j+(np-qp)*(i-1)+(i-1)*(i-2)/2
+          x(1,k) = (i-1)*dx+dx/2+x_mingeom
+          x(2,k) = (j-1)*dy+dy/2+y_mingeom
+          enddo          
+       enddo
+
+       do i = 1,m-qp
+         do j = 1,np
+           k = qp*((np-qp)*2+qp-1)/2+(i-1)*np+j
+           x(1,k) = (qp+i)*dx-dx/2+x_mingeom 
+           x(2,k) = (j-1)*dy+dy/2+y_mingeom
+         enddo
+       enddo
+
+       do i = 1,m
+          do j = 1,mp
+            k = m*np-qp*(qp+1)/2+(i-1)*mp+j
+            x(1,k) = (i-1)*dx+dx/2+x_mingeom
+            x(2,k) = (np+j)*dy-dy/2+y_mingeom
+           enddo
+       enddo
+
+      do i = 1,ntotal   
+       vx(1, i) = 0.
+        vx(2, i) = 0.
+c--- original density,pressure & mass of the particles    
+c--- zero pressure
+        p(i) = 0
+c        p(i) = 9.8*1000*(yl-x(2,i))
+        rho(i) = 1000
+c     low-density phase        
+c       if(x(1,i).gt.dx*m/2.or.x(2,i).gt.hp*dy) rho(i)= 250
+        mass(i) = dx*dy*rho(i)
+        u(i) = 357.1
+        itype(i) = 2
+        hsml(i) = 1.3*dx
+      enddo
+
+      end
+
+
+

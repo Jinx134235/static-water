@@ -70,7 +70,7 @@ c      common nvirt
       cita = 0.
 c---  Positions of virtual (boundary) particles:
 c---  call virt_part only once when implying dynamic boundary
-       if(dynamic)then
+       if(dynamic.or.dummy)then
          if(itimestep.eq.1) call virt_part(itimestep, ntotal,nvirt,hsml,
      &       mass,x,vx,rho,u,p,itype, nwall,mother)
           
@@ -124,16 +124,18 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
      &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
    
       if (dynamic) then
-          do i = 1,ntotalvirt
+         do i = 1,ntotal+nvirt
            rho(i)=rho(i)+dt*drho(i)
            call p_art_water(rho(i),x(2,i),c(i),p(i))
-          enddo
-c  Shepard filter
-          if (nor_density.and.mod(itimestep,30).eq.0) then      
-           call sum_density(ntotalvirt,hsml,mass,niac,pair_i,pair_j,w,
-     &        itype,rho)
-           endif
-       if (dummy) then    
+         enddo
+      else 
+         do i = 1,ntotal
+            rho(i)=rho(i)+dt*drho(i)
+            call p_art_water(rho(i),x(2,i),c(i),p(i))
+         enddo   
+      endif
+
+      if (dummy) then
         do k = 1,niac
             i = pair_i(k)
             j = pair_j(k)
@@ -154,16 +156,7 @@ c           if(i.eq.ntotal+1) print *,nvx(1,i),sumw(i)
          enddo
       endif
 
-      else
-       do i = 1,ntotal              
-          rho(i) = rho(i) + dt*drho(i)	 
-          call p_art_water(rho(i),x(2,i),c(i),p(i))   
-       enddo
-c  Shepard filter
-       if (nor_density.and.mod(itimestep,30).eq.0) then      
-         call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
-     &        itype,rho)         
-       endif
+      if(mirror) then
 c   pressure correction as well as density     
 c        b = c0**2*1000/7
         do i = 1,nvirt
@@ -175,8 +168,14 @@ c        b = c0**2*1000/7
      &  (y_mingeom-x(2,ntotal+i))
            rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
            endif
-       enddo
+         enddo
       endif
+c  Shepard filter
+       if (nor_density.and.mod(itimestep,30).eq.0) then
+         call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
+     &        itype,rho)
+       endif
+
       if (dynamic) then
 c---  Dynamic viscosity:
 
@@ -229,38 +228,38 @@ c     Calculating average velocity of each partile for avoiding penetration (4.9
      &                           pair_j, w, vx, rho, av) 
 c---  Convert velocity, force, and energy to f and dfdt  
 c---  Correction for dummy particles(pressure & density)
-c       if(dummy) then
-c        do i = 1,ntotal
-c          do d = 1,dim
-c          grap(d,i)=-grap(d,i)
-c          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
-c          enddo
-c       enddo
+       if(dummy) then
+        do i = 1,ntotal
+          do d = 1,dim
+          grap(d,i)=-grap(d,i)
+          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
+          enddo
+       enddo
 
-c        do k = 1, niac
-c           i = pair_i(k)
-c           j = pair_j(k)
-cc           if (itype(j).lt.0.and.itype(i).gt.0) then
+        do k = 1, niac
+           i = pair_i(k)
+           j = pair_j(k)
+           if (itype(j).lt.0.and.itype(i).gt.0) then
 
-c             pp(j) = pp(j) + p(i)*w(k)
-c             do d= 1,dim
-c               dx(d) = x(d,j)-x(d,i)
-c              egrd(j) = egrd(j)+rho(i)*dx(d)*grap(d,i)*w(k)
-c              enddo
-c            endif
-c        enddo
+             pp(j) = pp(j) + p(i)*w(k)
+             do d= 1,dim
+               dx(d) = x(d,j)-x(d,i)
+             egrd(j) = egrd(j)+rho(i)*dx(d)*grap(d,i)*w(k)
+              enddo
+            endif
+        enddo
 
-c        do i = ntotal+1,ntotal+nvirt
-c          if(sumw(i).ne.0)then
-c           p(i) = (pp(i)+egrd(i))/sumw(i)
-c    background pressure   
-c          kai = 1000*9.8*(y_maxgeom-x(2,i))
-c           rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
-c          endif
-c         enddo
+        do i = ntotal+1,ntotal+nvirt
+          if(sumw(i).ne.0)then
+           p(i) = (pp(i)+egrd(i))/sumw(i)
+c      background pressure   
+c           kai = 1000*9.8*(y_maxgeom-x(2,i))
+           rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
+          endif
+         enddo
 
 c         print *,p(ntotal+1),rho(ntotal+1)
-c       endif
+       endif
      
       maxvel = 0.e0
       minvel = 1.e1
@@ -273,9 +272,9 @@ c          dvx(1,i)=0
         enddo
 c        gravity
         if (self_gravity) then
-             if(dummy.and.itimestep*dt.le.damp_t)then
+             if(itimestep*dt.le.damp_t)then
                cita = 0.5*(sin((-0.5+itimestep*dt/damp_t)*pi)+1)
-               dvx(dim, i) = dvx(dim,i)-9.8*cita
+               dvx(dim,i) = dvx(dim,i)-9.8*cita
             else
                dvx(dim,i) = dvx(dim,i)-9.8
             endif
@@ -288,11 +287,6 @@ c        gravity
           vx(d, i) = vx(d, i) + dt * dvx(d, i) + av(d, i)
           x(d, i) = x(d, i) + dt * vx(d, i)       
         enddo
-c            if(x(2,i).le.y_mingeom) then
-c               print *,i,vx(1,i),vx(2,i)
-c               print *,itimestep
-c               stop
-c             endif
          vel = sqrt(vx(1,i)**2+vx(2,i)**2)
          sumvel = sumvel + vel
          if (vel.gt.maxvel)then
@@ -305,14 +299,14 @@ c             endif
         endif
 c            endif
       enddo
-c  keep the gate moving to a certain height
+c     keep the gate moving to a certain height
        if(gate.and.itimestep.le.2000)then
          do i = ntotal+nvirt-np*2+1,ntotal+nvirt
              x(2,i) = x(2,i) + dt*vx(2,i)
          enddo
       endif
 
-
+c     output data of virtual particles
       if (mod(itimestep,save_step).eq.0) then
 c       open(30,file="../data/trace_p.dat")
         open(40,file="../data/xv_vp.dat")
