@@ -120,7 +120,7 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
          enddo
       endif
 
-      call con_density(ntotal+nvirt,mass,niac,pair_i,pair_j,
+      call con_density(ntotalvirt,mass,niac,pair_i,pair_j,
      &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
    
       if (dynamic) then
@@ -176,7 +176,6 @@ c  Shepard filter
      &        itype,rho)
        endif
 
-      if (dynamic) then
 c---  Dynamic viscosity:
 
       if (visc) call viscosity(ntotalvirt,itype,x,rho,eta)
@@ -190,29 +189,13 @@ c---  Internal forces:(4.42)/(4.43)  4.58/4.59
 c      print *,grap(1,1),grap(2,1) 
 
 c---  Artificial viscosity:(4.66)
-
       if (visc_artificial) call art_visc(ntotalvirt,hsml,
      &      mass,x,vx,niac,rho,c,pair_i,pair_j,w,dwdx,ardvxdt,avdudt)
    
-      else
-         if (visc) call viscosity(ntotal,itype,x,rho,eta)
-       
-c---  Internal forces:
- 
-         call int_force(itimestep,dt,ntotal,nvirt,hsml,mass,vx,niac,rho,
-     &     eta, pair_i,pair_j,dwdx,u,itype,x,t,c,p,grap,indvxdt,
-     &     tdsdt,du) 
-                  
-c---  Artificial viscosity:
-
-         if (visc_artificial) call art_visc(ntotalvirt,hsml,
-     &      mass,x,vx,niac,rho,c,pair_i,pair_j,w,dwdx,ardvxdt,avdudt)
       
 c---  External forces:(4.93)
-
          if (ex_force) call ext_force(ntotalvirt,mass,x,vx,niac,
      &                  pair_i,pair_j,itype, hsml, exdvxdt)
-      endif
 
 c     Calculating the neighboring particles and undating HSML (4.80)/(4.81)
       

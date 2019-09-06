@@ -35,9 +35,9 @@ c      dt-- timestep                                             [input]
      &       drho(maxn),  av(dim, maxn), ds(maxn),
      &       t(maxn), tdsdt(maxn), temp_u, temp_rho, sumvel 
       double precision  time
-      real, allocatable:: p_record(:),v_record(:)
+      real, allocatable:: p_record(:),v_record(:,:)
       allocate(p_record(200))
-      allocate(v_record(200))
+      allocate(v_record(2,200))
 c      common nvirt
                
       do i = 1, ntotal
@@ -69,7 +69,8 @@ c---  Definition of variables out of the function vector:
 c              p_record(1) = itimestep
              i = itimestep/print_step 
              p_record(i) = p(int(ntotal/2))
-             v_record(i) = sumvel/ntotal
+             v_record(1,i) = sumvel/ntotal
+             v_record(2,i) = vx(2,39)
         endif
 c        print *,vx(2,1)
 c        if (vx(2,1).gt.0) then
@@ -96,9 +97,10 @@ c      endif
              open(20,file="../data/record.dat")
              do i =1,(nstart+maxtimestep)/print_step
                 step = i*print_step
-                write(20,1002) step, p_record(i),v_record(i)
+                write(20,1002) step,
+     &           p_record(i),v_record(1,i),v_record(2,i)
              enddo
-1002    format(1x, I6, 2x, e14.8,2x,e14.8)
+1002    format(1x, I6, 3(2x, e14.8))
         close(20)
         endif        
 

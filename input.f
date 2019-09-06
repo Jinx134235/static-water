@@ -52,7 +52,7 @@ c     load initial particle information from external disk file
      &                      itype, hsml, ntotal)
       if(static) call static_water(x, vx, mass, rho, p, u,
      &                      itype, hsml, ntotal)
-
+      
         do i = 1, ntotal 
           write(1,1001) i, (x(d, i),d = 1, dim), (vx(d, i),d = 1, dim) 
           write(2,1002) i, mass(i), rho(i), p(i), u(i)         
@@ -80,7 +80,7 @@ c     load initial particle information from external disk file
 
 c----------------------------------------------------------------------     
 c     This subroutine is used to generate initial data for the 
-c     2-d static water benchmark as well as dambreak with Re = 1
+c     2-d  dambreak benchmark
 c     x-- coordinates of particles                                 [out]
 c     vx-- velocities of particles                                 [out]
 c     mass-- mass of particles                                     [out]
@@ -241,16 +241,16 @@ c   hp:rows of praticle in high-density domain
       double precision xl, yl, dx, dy
 
 
-      m = 130
-      n = 65
+      m = 65
+      n = 32
 
       dx = (x_maxgeom-x_mingeom)/m
       dy = (y_maxgeom-y_mingeom)/n
       
-      mp = 10
-      np = 50
-      qp = 15
-c     hp = 45
+      mp = 5
+      np = 25
+      qp = 10
+      hp = 20
       ntotal = m*(mp+np)-qp*(qp+1)/2
       
       do i = 1,qp
@@ -285,11 +285,15 @@ c--- zero pressure
         p(i) = 0
 c        p(i) = 9.8*1000*(yl-x(2,i))
         rho(i) = 1000
+        itype(i)  = 2
 c     low-density phase        
-c       if(x(1,i).gt.dx*m/2.or.x(2,i).gt.hp*dy) rho(i)= 250
+       if(x(1,i).gt.dx*m/2.or.x(2,i).gt.hp*dy)then
+           rho(i)= 250
+           itype(i) = 3
+        endif
         mass(i) = dx*dy*rho(i)
         u(i) = 357.1
-        itype(i) = 2
+        
         hsml(i) = 1.3*dx
       enddo
 
