@@ -1,5 +1,5 @@
       subroutine single_step(itimestep,nstart, dt, ntotal, nvirt,hsml, 
-     &           mass, x, vx,u, s,rho, p, t, tdsdt, du,ds,
+     &           mass, x, vx,u, s,rho, p, t, tdsdt, du,ds,c,
      &           itype, av, niac, pair_i, pair_j, sumvel) 
 
 c----------------------------------------------------------------------
@@ -17,7 +17,7 @@ c     vx       :  Particle velocity                             [in/out]
 c     u        :  Particle internal energy                          [in]
 c     s        :  Particle entropy (not used here)                  [in]
 c     rho      :  Density                                       [in/out]
-c     p        :  Pressure                                         [out]
+c     p        :  Pressure                                      [in/out]
 c     t        :  Temperature                                   [in/out]
 c     tdsdt    :  Production of viscous entropy t*ds/dt            [out]
 c     du       :  du  = du/dt                                      [out]
@@ -59,7 +59,6 @@ c      common nvirt
           exdvxdt(d,i) = 0.
           nvx(d,i) = 0.
           grap(d,i) = 0.
-
         enddo
       enddo  
 
@@ -131,6 +130,7 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
       else 
          do i = 1,ntotal
             rho(i)=rho(i)+dt*drho(i)
+c           if (rho(i).lt.1000) rho(i) = 1000
             call p_art_water(rho(i),x(2,i),c(i),p(i))
          enddo   
       endif
@@ -189,8 +189,8 @@ c---  Internal forces:(4.42)/(4.43)  4.58/4.59
 c      print *,grap(1,1),grap(2,1) 
 
 c---  Artificial viscosity:(4.66)
-      if (visc_artificial) call art_visc(ntotalvirt,hsml,
-     &      mass,x,vx,niac,rho,c,pair_i,pair_j,w,dwdx,ardvxdt,avdudt)
+      if (visc_artificial) call art_visc(ntotal,hsml,mass,x,vx,
+     &      niac,rho,c,pair_i,pair_j,itype,w,dwdx,ardvxdt,avdudt)
    
       
 c---  External forces:(4.93)
@@ -215,7 +215,7 @@ c---  Correction for dummy particles(pressure & density)
         do i = 1,ntotal
           do d = 1,dim
           grap(d,i)=-grap(d,i)
-          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
+c         if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
           enddo
        enddo
 
@@ -228,12 +228,21 @@ c---  Correction for dummy particles(pressure & density)
              do d= 1,dim
                dx(d) = x(d,j)-x(d,i)
              egrd(j) = egrd(j)+rho(i)*dx(d)*grap(d,i)*w(k)
+c  print the process of summation for debug
+             if(itimestep.eq.100.and.j.eq.ntotal+1)then 
+                print *,rho(i),dx(d),grap(d,i),w(k)    
+                
+              endif   
               enddo
             endif
         enddo
+c       if(mod(itimestep,print_step).eq.0)then
+c         print *,pp(ntotal+1), egrd(ntotal+1),sumw(ntotal+1)
+c         print *,
 
         do i = ntotal+1,ntotal+nvirt
           if(sumw(i).ne.0)then
+                  
            p(i) = (pp(i)+egrd(i))/sumw(i)
 c      background pressure   
 c           kai = 1000*9.8*(y_maxgeom-x(2,i))
@@ -241,9 +250,9 @@ c           kai = 1000*9.8*(y_maxgeom-x(2,i))
           endif
          enddo
 
-c         print *,p(ntotal+1),rho(ntotal+1)
+c          print *,p(ntotal+1),rho(ntotal+1)
        endif
-     
+c      print *, indvxdt(dim,39),ardvxdt(dim,39)    
       maxvel = 0.e0
       minvel = 1.e1
       sumvel = 0.e0
@@ -309,15 +318,15 @@ c       open(30,file="../data/trace_p.dat")
         close(60) 
       endif 
      
-      if (mod(itimestep,print_step).eq.0) then      
-          write(*,*) '**** particle moving fastest ****', maxi, maxvel         
+c      if (mod(itimestep,print_step).eq.0) then      
+c          write(*,*) '**** particle moving fastest ****', maxi, maxvel         
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
-          write(*,*) '**** average velocity:', real(sumvel/ntotal)
+c          write(*,*) '**** average velocity:', real(sumvel/ntotal)
 c           write(*,*) '**** particle moving slowest ****', mini         
 c         write(*,102)'velocity(y)','internal(y)','total(y)'   
 c          write(*,103)  x(1,mini),x(2,mini),vx(1,mini),vx(2,mini) 
-      endif
+c      endif
       
 c100   format(1x,4(2x,e12.6))     
 c101   format(1x,4(2x,e12.6))          

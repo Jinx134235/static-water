@@ -60,10 +60,14 @@ c        time=current_ts*dt
        
 
 c---  Definition of variables out of the function vector:    
-      
+c      print *,'before single step:', p(ntotal+1)     
+
+
         call single_step(itimestep,nstart, dt, ntotal,nvirt, hsml, mass,
-     &        x, vx,u, s, rho, p, t, tdsdt, du, ds,  itype, av, niac,
+     &        x, vx,u, s, rho, p, t, tdsdt, du, ds,c, itype, av, niac,
      &        pair_i, pair_j, sumvel)  
+     
+c       print *,'after single step:' ,p(ntotal+1)
                   
         if (mod(itimestep,print_step).eq.0) then
 c              p_record(1) = itimestep

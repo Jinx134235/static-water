@@ -59,10 +59,16 @@ c      common nvirt
 c   in this case, the computing domain is defaultly set as square
        
 	nvirt = 0
-      mp = 65
-      qp = 10
-      np = 32
-      nnp = 25
+      if(geometry) then
+       mp = 65
+       qp = 10
+       np = 32
+       nnp = 25
+      else
+        mp = 39
+        np = 39
+      endif
+
 	xl = x_maxgeom-x_mingeom
 	dx = xl / mp
 c  speed of the gate(dambreak)/ speed of the top(cavityflow)        
