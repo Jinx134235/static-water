@@ -157,6 +157,10 @@ c           if(i.eq.ntotal+1) print *,nvx(1,i),sumw(i)
       endif
 
       if(mirror) then
+          if (nor_density.and.mod(itimestep,30).eq.0) then
+         call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
+     &        itype,rho)
+          endif
 c   pressure correction as well as density     
 c        b = c0**2*1000/7
         do i = 1,nvirt
@@ -215,7 +219,7 @@ c---  Correction for dummy particles(pressure & density)
         do i = 1,ntotal
           do d = 1,dim
           grap(d,i)=-grap(d,i)
-c         if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
+c          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
           enddo
        enddo
 
@@ -229,10 +233,8 @@ c         if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
                dx(d) = x(d,j)-x(d,i)
              egrd(j) = egrd(j)+rho(i)*dx(d)*grap(d,i)*w(k)
 c  print the process of summation for debug
-             if(itimestep.eq.100.and.j.eq.ntotal+1)then 
-                print *,rho(i),dx(d),grap(d,i),w(k)    
-                
-              endif   
+c             if(itimestep.eq.100.and.j.eq.ntotal+1)then 
+c                print *,rho(i),dx(d),grap(d,i),w(k)    
               enddo
             endif
         enddo

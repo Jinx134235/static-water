@@ -35,7 +35,7 @@ c      dt-- timestep                                             [input]
      &       drho(maxn),  av(dim, maxn), ds(maxn),
      &       t(maxn), tdsdt(maxn), temp_u, temp_rho, sumvel 
       double precision  time
-      real, allocatable:: p_record(:),v_record(:,:)
+      real, allocatable :: p_record(:),v_record(:,:)
       allocate(p_record(200))
       allocate(v_record(2,200))
 c      common nvirt

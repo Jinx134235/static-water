@@ -56,7 +56,7 @@ c     only for fluid  particle
       do k=1,niac
         i = pair_i(k)
         j = pair_j(k)
-c       if (itype(i).gt.0.and.itype(j).gt.0) then
+      if (itype(i).gt.0.and.itype(j).gt.0) then
           mhsml= (hsml(i)+hsml(j))/2.
            vr = 0.e0
            rr = 0.e0
@@ -91,7 +91,7 @@ c     Calculate SPH sum for artificial viscous force
             dedt(j) = dedt(j) - mass(i)*dvx(d)*h
           enddo
         endif
-c       endif
+       endif
       enddo
 
 c     Change of specific internal energy:

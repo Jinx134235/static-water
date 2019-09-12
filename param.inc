@@ -23,9 +23,9 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  .39e0     ,
+      parameter ( x_maxgeom =  1.3e0     ,
      &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  .39e0     ,
+     &            y_maxgeom =  .64e0     ,
      &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
@@ -134,23 +134,25 @@ c     int_stat = .true. : Print statistics about SPH particle interactions.
 c                        including virtual particle information.
 c     print_step: Print Timestep (On Screen)
 c     save_step : Save Timestep    (To Disk File)
-c     moni_particle: The particle number for information monitoring.
+c     mmp: The particle number in each direction(equal in a square tank)
       logical int_stat
       parameter ( int_stat = .true. )
-      integer print_step, save_step, moni_particle
+      integer print_step, save_step, mmp
       parameter ( print_step = 100,
-     &            save_step = 1 ) 
+     &            save_step = 1 ,
+     &            mmp = 65 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
 c    damp_t: damping time in damping technique     
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 2.52389e1,   
+     &            c0 = 3.756594e1,   
      &            damp_t = 0.2 )
 
 c    Switch for different benchmarks
       logical dambreak, static, geometry
       parameter ( dambreak = .false.)
       parameter ( static = .true.)
-      parameter ( geometry = .false.)
+      parameter ( geometry = .true.)
+

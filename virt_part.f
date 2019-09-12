@@ -15,7 +15,8 @@ c     vx     : Velocities of all particles                      [in|out]
 c     rho    : Density                                          [in|out]
 c     u      : internal energy                                  [in|out]
 c     itype   : type of particles                               [in|out]
-c     mother  : indicating which particle it was generated from  [in|out]
+c     mother  : indicating which particle it was generated from  [out]
+c     ogn     : number of over generation                        [out]
 
       implicit none
       include 'param.inc'
@@ -26,8 +27,8 @@ c     integer, intent(out):: nvirt
 
       double precision hsml(maxn),mass(maxn),x(dim,maxn),vx(dim,maxn),
      &                 rho(maxn), u(maxn), p(maxn)
-      integer i, j, d, im, mp,np, qp,scale_k, nnp, nwall
-      double precision xl, dx, v_gate, tiny, b
+      integer i, j, d, im,mp,np, qp,scale_k, nnp, nwall, ogn(maxn)
+      double precision xl, dx, v_gate, tiny, b, a, y1, y2
 c      common nvirt
       real corner(2,4)
 
@@ -60,17 +61,19 @@ c   in this case, the computing domain is defaultly set as square
        
 	nvirt = 0
       if(geometry) then
+       a = tan(pi/3)
+c       print *,a
        mp = 65
-       qp = 10
+       
        np = 32
-       nnp = 25
-      else
-        mp = 39
-        np = 39
+       nnp = 10
+       qp = int(nnp/a)+1
+      else        
+        np = mmp
       endif
 
 	xl = x_maxgeom-x_mingeom
-	dx = xl / mp
+	dx = xl / mmp
 c  speed of the gate(dambreak)/ speed of the top(cavityflow)        
       v_gate = 1.5
 c      h = hsml(1)
@@ -132,7 +135,7 @@ c	   itype(ntotal + i) = 0
 c	    hsml(ntotal + i) = 1.3*dx
 c        enddo
       else
-c--- staggered grid on the boundary, right-down-left
+c--- staggered grid on the boundary, left-down-right
 c    upside        
 c       do i = 1, mp
 c           nvirt = nvirt + 1
@@ -163,13 +166,27 @@ c        enddo
             x(2, ntotal+nvirt) = y_mingeom+i*dx-dx/2
             enddo
          enddo
-c    add obstacle on the left wall
+c    add obstacle
          if(geometry)then
-          do i = 1,qp
-            do j =1,i     
-             nvirt = nvirt+1
-              x(1,ntotal+nvirt) = x_mingeom+(qp-i)*dx+dx/2
-              x(2,ntotal+nvirt) = y_mingeom+(nnp-j)*dx+dx/2
+c  on the left wall
+c          do i = 1,qp
+c            do j =1,i     
+c             nvirt = nvirt+1
+c              x(1,ntotal+nvirt) = x_mingeom+(qp-i)*dx+dx/2
+c              x(2,ntotal+nvirt) = y_mingeom+(nnp-j)*dx+dx/2
+c            enddo
+c          enddo
+
+c at the bottom
+         do i = np+1-qp,np+1+qp
+           do j = 1, nnp
+            y1 = a*(i*dx-dx/2)+nnp*dx-a*xl/2
+            y2 = a*(dx/2-i*dx)+nnp*dx+a*xl/2
+             if(j*dx-dx/2.lt.y1.and.j*dx-dx/2.lt.y2) then
+                nvirt = nvirt + 1
+               x(1,ntotal+nvirt) = x_mingeom+i*dx-dx/2
+               x(2,ntotal+nvirt) = y_mingeom+j*dx-dx/2
+             endif 
             enddo
           enddo
         endif
