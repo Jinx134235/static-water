@@ -77,12 +77,12 @@ c     the computational domain by one cell
       enddo
 
 c     Number of grid cells in x-, y- and z-direction:
-
+c     +1 : in case of cell length cannot exactly devide domain
       if (dim.eq.1) then
-        ngrid(1) = min(int(dgeomx(1)/cll) ,maxng(1))
+        ngrid(1) = min(int(dgeomx(1)/cll+1) ,maxng(1))
       else if (dim.eq.2) then
-        ngrid(1) = min(int(dgeomx(1)/cll),maxng(1))
-        ngrid(2) = min(int(dgeomx(2)/cll),maxng(2))
+        ngrid(1) = min(int(dgeomx(1)/cll+1),maxng(1))
+        ngrid(2) = min(int(dgeomx(2)/cll+1),maxng(2))
 c      else if (dim.eq.3) then
 c       ngridx(1) = min(int((ntotal*dgeomx(1)*dgeomx(1)/
 c     &      (dgeomx(2)*dgeomx(3)*nppg))**(1.e0/3.e0)) + 1,maxng(1))

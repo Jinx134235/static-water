@@ -1,5 +1,5 @@
-      subroutine ext_force(ntotal,mass,x,vx,niac,
-     &           pair_i,pair_j,itype,hsml,dvxdt)
+      subroutine ext_force(ntotal,mass,x,vx,niac,pair_i,pair_j,
+     &       itype,hsml,dvxdt)
 
 c--------------------------------------------------------------------------
 c     Subroutine to calculate the external forces, e.g. gravitational forces.      
@@ -32,11 +32,9 @@ c     dvxdt   : Acceleration with respect to x, y and z            [out]
 	enddo
       enddo
         
-
-
 c     Boundary particle force and penalty anti-penetration force. 
-      rr0 = 1.25e-5
-      dd = 1.e-2
+      rr0 = 1.e-2
+      dd = 8.6e2
       p1 = 12
       p2 = 4
       

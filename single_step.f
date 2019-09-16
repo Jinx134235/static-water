@@ -30,7 +30,7 @@ c     sumvel   :  Summation of velocity                            [out]
       include 'param.inc'
 
       integer itimestep, ntotal, itype(maxn), maxtimestep, scale_k,
-     &        nstart, np
+     &        nstart, np,nnp
       double precision dt, hsml(maxn), mass(maxn), u(maxn), s(maxn), 
      &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn), du(maxn),
      &        ds(maxn), drho(maxn), pp(maxn),sumw(maxn)
@@ -42,9 +42,9 @@ c      common nvirt
      &       indvxdt(dim,maxn),exdvxdt(dim,maxn),ardvxdt(dim,maxn),  
      &       avdudt(maxn), ahdudt(maxn), c(maxn), eta(maxn),dis_x, 
      &       dis_y, wi(maxn), nvx(dim,maxn),grap(dim,maxn),egrd(maxn)
-      double precision x(dim,maxn),vx(dim,maxn),dx(dim),dvx(dim,maxn),
+      double precision x(dim,maxn),vx(dim,maxn),ddx(dim),dvx(dim,maxn),
      &       av(dim,maxn), maxvel, b, minvel, vel,sumvel, norp,
-     &       kai,v_inf,cita                          
+     &       kai,v_inf,cita,a,xl,dx                          
      
 
       do i=1,maxn
@@ -62,7 +62,11 @@ c      common nvirt
         enddo
       enddo  
 
-      np = 31   
+      np = 31
+      nnp = 10
+      xl = x_maxgeom-x_mingeom
+      dx = xl/mmp
+      a  = tan(pi/3)   
       b = c0**2*1000/7
       v_inf = 0.
       kai = 0.
@@ -130,7 +134,7 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
       else 
          do i = 1,ntotal
             rho(i)=rho(i)+dt*drho(i)
-c           if (rho(i).lt.1000) rho(i) = 1000
+c           if (i.eq.7555.or.i.eq.7556)  print *,drho(i)
             call p_art_water(rho(i),x(2,i),c(i),p(i))
          enddo   
       endif
@@ -163,14 +167,13 @@ c           if(i.eq.ntotal+1) print *,nvx(1,i),sumw(i)
           endif
 c   pressure correction as well as density     
 c        b = c0**2*1000/7
-        do i = 1,nvirt
-           p(ntotal + i) = p(mother(ntotal + i))
-           rho(ntotal + i) = rho(mother(ntotal + i))
-           if (itype(ntotal+i).ne.0.and.
-     &  x(2,ntotal+i).lt.y_mingeom) then
-           p(ntotal + i) = p(mother(ntotal + i))+2*9.8*1000*
-     &  (y_mingeom-x(2,ntotal+i))
-           rho(ntotal + i)= 1000*(p(ntotal+i)/b+1)**(1/7)
+        do i = ntotal+1,ntotal+nvirt
+           p(i) = p(mother(i))
+           rho(i) = rho(mother(i))
+           if((x(2,i).lt.y_mingeom).or.(x(2,i).lt.a*x(1,i)-a*xl/2+nnp*dx
+     &    .and.x(2,i).lt.-a*x(1,i)+a*xl/2+nnp*dx)) then
+           p(i) = p(mother(i))+9.8*1000*(x(2,mother(i))-x(2,i))
+           rho(i)= 1000*(p(i)/b+1)**(1/7)
            endif
          enddo
       endif
@@ -230,8 +233,8 @@ c          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
 
              pp(j) = pp(j) + p(i)*w(k)
              do d= 1,dim
-               dx(d) = x(d,j)-x(d,i)
-             egrd(j) = egrd(j)+rho(i)*dx(d)*grap(d,i)*w(k)
+               ddx(d) = x(d,j)-x(d,i)
+             egrd(j) = egrd(j)+rho(i)*ddx(d)*grap(d,i)*w(k)
 c  print the process of summation for debug
 c             if(itimestep.eq.100.and.j.eq.ntotal+1)then 
 c                print *,rho(i),dx(d),grap(d,i),w(k)    
@@ -252,7 +255,8 @@ c           kai = 1000*9.8*(y_maxgeom-x(2,i))
           endif
          enddo
 
-c          print *,p(ntotal+1),rho(ntotal+1)
+c      print *,indvxdt(2,7555),indvxdt(2,7556)
+c      print *,ardvxdt(2,7555),ardvxdt(2,7556)
        endif
 c      print *, indvxdt(dim,39),ardvxdt(dim,39)    
       maxvel = 0.e0
@@ -279,6 +283,7 @@ c        gravity
         if(u(i).lt.0)  u(i) = 0.         
         do d = 1, dim                   
           vx(d, i) = vx(d, i) + dt * dvx(d, i) + av(d, i)
+c          if(i.eq.7555.or.i.eq.7556) print *,dvx(d,i),av(d,i)
           x(d, i) = x(d, i) + dt * vx(d, i)       
         enddo
          vel = sqrt(vx(1,i)**2+vx(2,i)**2)
@@ -291,8 +296,10 @@ c        gravity
             minvel = vel
             mini = i    
         endif
-c            endif
       enddo
+
+c      print *,p(7555),p(7556),wi(7555),wi(7556)
+
 c     keep the gate moving to a certain height
        if(gate.and.itimestep.le.2000)then
          do i = ntotal+nvirt-np*2+1,ntotal+nvirt

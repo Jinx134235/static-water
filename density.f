@@ -205,6 +205,7 @@ c     Secondly calculate the rho integration over the space
 c      c = 29.32
       b = c0**2*1000/7
       do k=1,niac      
+        r = 0.
         i = pair_i(k)
         j = pair_j(k)
         do d=1,dim
@@ -220,6 +221,7 @@ c      c = 29.32
         drhodt(i) = drhodt(i) + mass(j)*vcc
         drhodt(j) = drhodt(j) + mass(i)*vcc
 c  add filter to the continuity equation
+c  molteni        
         if (filt.eq.1) then
          do d=1,dim
             psi(d) = 2*(rho(j)-rho(i))*dx(d)/sqrt(r)
@@ -228,14 +230,16 @@ c  add filter to the continuity equation
          do d=2,dim
            xcc = xcc+psi(d)*dwdx(d,k)
          enddo 
-          drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
+c           if(i.eq.1) print *,'before filter',drhodt(i)
+          drhodt(i) = drhodt(i) + delta*hsml(i)*c0*xcc*mass(j)/rho(j)
 c           if (i.eq.1) print *,'after filter',drhodt(i) 
-          drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
-        elseif (filt.eq.2) then
-           rhoh = 1000*(1000*9.8*dx(dim)/b+1)**(1/7)
+          drhodt(j) = drhodt(j) + delta*hsml(j)*c0*xcc*mass(i)/rho(i)
+c   georgios
+       elseif (filt.eq.2) then
+           rhoh = 1000*((1000*9.8*dx(dim)+1)/b-1)**(1/7)
 c           if(k.le.10)print *,rhoh  
            do d=1,dim
-            psi(d) = 2*(rho(j)-rho(i)+rhoh)*dx(d)/sqrt(r)
+            psi(d) = 2*(rho(j)-rho(i)-rhoh)*dx(d)/sqrt(r)
           enddo
 c          if(k.eq.1) print*,psi
            xcc = psi(1)*dwdx(1,k)
@@ -243,10 +247,12 @@ c          if(k.eq.1) print*,psi
            xcc = xcc+psi(d)*dwdx(d,k)
            enddo
 c           if (i.eq.1) print *,'before filter',drhodt(i) 
-          drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
+          drhodt(i) = drhodt(i) + delta*hsml(i)*c0*xcc*mass(j)/rho(j)
 c           if (i.eq.1) print *,'after filter',drhodt(i) 
-          drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
-        elseif (filt.eq.3) then
+          drhodt(j) = drhodt(j) + delta*hsml(j)*c0*xcc*mass(i)/rho(i)
+
+c  antuono(delta-sph)
+       elseif (filt.eq.3) then
           ucc = (norrho(1,i)+norrho(1,j))*dx(1)
           do d=2,dim
             ucc = ucc + (norrho(d,i)+norrho(d,j))*dx(d)

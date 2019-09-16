@@ -23,7 +23,7 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  1.3e0     ,
+      parameter ( x_maxgeom =  1.28e0     ,
      &            x_mingeom =  0.e0     ,
      &            y_maxgeom =  .64e0     ,
      &            y_mingeom =  0.e0     ,
@@ -38,14 +38,14 @@ c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
 c              2 : (e.g. (p(i)/rho(i)**2+p(j)/rho(j)**2)
 c              3 : (e.g. (p(i)*rho(j)+p(j)*rho(i))/(rho(i)+rho(j))
       integer pa_sph 
-      parameter(pa_sph = 3)
+      parameter(pa_sph = 1)
 
 c     Nearest neighbor particle searching (nnps) method
 c     nnps = 1 : Simplest and direct searching
 c            2 : Sorting grid linked list
 c            3 : Tree algorithm
       integer nnps 
-      parameter(nnps = 2)
+      parameter(nnps = 1)
 
 c     Smoothing length evolution (sle) algorithm
 c     sle = 0 : Keep unchanged,
@@ -107,7 +107,7 @@ c     dummy = .true. : dummy boundary
      &        mirror, gate, dummy
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .false. )
+      parameter ( average_velocity  = .true. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
@@ -116,11 +116,11 @@ c     dummy = .true. : dummy boundary
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .false. )      
+      parameter ( nor_density  = .false. )            
       parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
-      parameter ( mirror = .false. )
-      parameter ( dummy = .true. )
+      parameter ( mirror = .true. )
+      parameter ( dummy = .false. )
 
 c     Symmetry of the problem
 c     nsym = 0 : no symmetry,
@@ -140,14 +140,14 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 65 ) 
+     &            mmp = 130 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
 c    damp_t: damping time in damping technique     
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 3.756594e1,   
+     &            c0 = 2.93249e1,   
      &            damp_t = 0.2 )
 
 c    Switch for different benchmarks

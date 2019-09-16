@@ -257,18 +257,18 @@ c   a: slope of the line(obstacle)
       double precision xl, yl, dx, dy, theta, a, y1, y2
 
 
-      m = 65
+      m = 64
       n = 30
       theta = pi/3
-      a = tan(theta)
+      a = tan((pi-theta)/2)
 
       xl = x_maxgeom-x_mingeom
-      dx = xl/m
+      dx = 2.e-2
 c      dy = (y_maxgeom-y_mingeom)/n
       
       mp = 20
 c      np = 25
-c      qp = 10
+      qp = int(2*(n-mp)/a)
 c      hp = 20
       
 c      ntotal = m*(mp+np)-qp*(qp+1)/2
@@ -302,7 +302,9 @@ c  geometry 2
         do j = 1,n
           y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
           y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
-          if (j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2) then
+          if (j*dx-dx/2.gt.y1+5.5*dx.or.j*dx-dx/2.gt.y2+5.5*dx.or.
+     &     j*dx-dx/2.gt.(n-mp+1)*dx) then
+c           if (j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2) then
               ntotal = ntotal + 1
              x(1,ntotal) = x_mingeom+i*dx-dx/2
              x(2,ntotal) = y_mingeom+j*dx-dx/2
@@ -310,6 +312,19 @@ c  geometry 2
         enddo
       enddo
 
+c   leftside&rightside of wedge, symmetry to centerline
+      do i = 1,3
+        do j = 1,qp+2
+          ntotal = ntotal + 2
+          x(1,ntotal-1) = cos(theta)*((j-1)*dx+dx/4-(i-1)*dx/a)-
+     &    sin(theta)*((i-1)*dx+a*dx/4)+xl/2-(n-mp)*dx/a 
+          x(1,ntotal) = xl-x(1,ntotal-1)
+          x(2,ntotal-1) = cos(theta)*((i-1)*dx+a*dx/4)+sin(theta)*
+     &    ((j-1)*dx+dx/4-(i-1)*dx/a)     
+          x(2,ntotal) = x(2,ntotal-1)
+          enddo
+       enddo
+ 
 
       do i = 1,ntotal   
         vx(1, i) = 0.

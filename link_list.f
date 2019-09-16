@@ -73,7 +73,7 @@ c     Position particles on grid and create linked list:
         celldata(i) = grid(gcell(1),gcell(2),gcell(3))
         grid(gcell(1),gcell(2),gcell(3)) = i
       enddo
-c      print *,celldata(1618)
+c      print *,celldata(938)
 c     Determine interaction parameters:
 
       niac = 0
@@ -91,7 +91,7 @@ c     Determine range of grid to go through:
           maxxcell(d) = min(dpxgcell(d),ngridx(d))
         enddo
 
-c      if (i.eq.1) print *,minxcell,maxxcell
+c      if (i.eq.7380) print *,minxcell,maxxcell
 
 c     Search grid:
       
@@ -122,7 +122,7 @@ c     the interaction number for each particle
 C--- Kernel and derivations of kernel
  
                     call kernel(r,dx,hsml,w(niac),tdwdx)
-c                  if (niac.eq.3) print *,tdwdx  
+c                  if (i.eq.7380) print *,pair_j(niac)
                   do d = 1, dim
 	              dwdx(d,niac)=tdwdx(d)
 c                    if (niac.le.2) print *,d 

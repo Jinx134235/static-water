@@ -80,6 +80,8 @@ c     the interaction number for each particle
 c     Kernel and derivations of kernel
 
               call kernel(r,dxiac,mhsml,w(niac),tdwdx)
+c             if(j.eq.7555.or.j.eq.7556) print
+c     &      *,niac,pair_i(niac),w(niac),tdwdx
               do d=1,dim
                 dwdx(d,niac) = tdwdx(d)
               enddo                                  	     
