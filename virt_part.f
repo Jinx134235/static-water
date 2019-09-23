@@ -23,9 +23,9 @@ c     ogn     : number of over generation                        [out]
 
       integer itimestep, ntotal, itype(maxn), nvirt, mother(maxn)
       double precision hsml(maxn),mass(maxn),x(dim,maxn),vx(dim,maxn),
-     &                 rho(maxn), u(maxn), p(maxn)
-      integer i, j, d, im,mp,np, qp,scale_k, nnp, nwall, flag
-      double precision xl, dx, v_gate, tiny, b, a, y1, y2, dps
+     &                 rho(maxn), u(maxn), p(maxn),slope(maxn)
+      integer i, j, d, im,mp,np, qp,scale_k, nnp, nwall, flag,ocn(maxn)
+      double precision xl, dx, v_gate, tiny, b, a, y1, y2, dps,period
 c      common nvirt
       real corner(2,5)
 
@@ -57,19 +57,25 @@ c      common nvirt
 c   in this case, the computing domain is defaultly set as square
        
 	nvirt = 0
-      if(geometry) then
+        do i = 1,ntotal
+          ocn(i) =1
+        enddo
+c      if(geometry) then
        a = tan(pi/3)
 c       print *,a
        mp = 64 
        np = 32
        nnp = 10
        qp = int(nnp/a)+1
-      else        
-        np = mmp
-      endif
+c      else        
+c        np = mmp
+c      endif
+      
 
 	xl = x_maxgeom-x_mingeom
 	dx = 2.e-2
+        period = sqrt(3.)*pi/(2*nnp*dx)
+
 c  speed of the gate(dambreak)/ speed of the top(cavityflow)        
       v_gate = 1.5
 c      h = hsml(1)
@@ -78,7 +84,7 @@ c   coordinates of the corners
       corner(:,5)=(/xl/2,nnp*dx/)
 c      corner(:,2)=(/xl/2-nnp*dx/a,y_mingeom/)
 c      print *,corner
-      if(.not.dynamic.and..not.dummy.and..not.mirror) then
+      if(.not.dynamic.and..not.dummy) then
 c     repulsive boundary   --fixed solid particle
 c     Monaghan type virtual particle on the Upper side
       
@@ -89,23 +95,45 @@ c          x(2, ntotal + nvirt) = xl
 c          vx(1, ntotal + nvirt) = 0.
 c	  vx(2, ntotal + nvirt) = 0.
 c        enddo
-     
+       if(itimestep.eq.1.and.geom.eq.2) then   
 c     Monaghan type virtual particle on the Lower side
 
         do i = 1, 2*mp+1
-          if (i.gt.mp-qp*2+1.and.i.le.mp) then 
+          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
+     &   nnp*dx/a)then
+         nvirt = nvirt + 1
+           x(1, ntotal + nvirt) = x_mingeom+(i-1)*dx/2
+           x(2, ntotal + nvirt) = y_mingeom
+          endif
+        enddo
+        do i = 1,2*mp+1
+         if((i-1)*dx/2.gt.xl/2-nnp*dx/a.and.(i-1)*dx/2.lt.xl/2+
+     &   nnp*dx/a) then
            nvirt = nvirt + 1
            x(1,ntotal+nvirt)=x_mingeom+(i-1)*dx/2
-           x(2,ntotal+nvirt)=a*x(1,ntotal+nvirt)-a*xl/2+nnp*dx
-          else if(i.gt.mp.and.i.le.mp+qp*2) then
-            nvirt = nvirt + 1
-            x(1,ntotal+nvirt)=x_mingeom+(i-1)*dx/2
-            x(2,ntotal+nvirt)=-a*x(1,ntotal+nvirt)+a*xl/2+nnp*dx
-          else        
-   	   nvirt = nvirt + 1
-           x(1, ntotal + nvirt) = x_mingeom+(i-1)*dx/2
-           x(2, ntotal + nvirt) = y_mingeom  
-          endif
+           x(2,ntotal+nvirt)=nnp*dx*sin(period*(x(1,ntotal+nvirt)-
+     &     xl/2+nnp*dx/a))
+           slope(ntotal+nvirt)=nnp*dx*period*cos(period*
+     &     (x(1,ntotal+nvirt)-xl/2+nnp*dx/a))
+c           dps = sqrt((x(1,ntotal+nvirt)-x(1,ntotal+nvirt-1))**2+
+c     &      (x(2,ntotal+nvirt)-x(2,ntotal+nvirt-1))**2)
+c           if(dps.gt.dx/2)then
+c             do j =1,int(2*dps/dx)
+c               ntotal = ntotal+1
+c               x(1,ntotal+nvirt)=x(1,ntotal+nvirt-1)-
+c    &          dps/(int(2*dps/dx)+1)
+c              x(2,ntotal+nvirt)=nnp*dx*sin(period*(x(1,ntotal+nvirt)-
+c     &     xl/2+nnp*dx/a))
+c             slope(ntotal+nvirt)=nnp*dx*period*cos(period*
+c     &     (x(1,ntotal+nvirt)-xl/2+nnp*dx/a))
+c             enddo
+c           endif
+c          else
+c           nvirt = nvirt + 1
+c           x(1, ntotal + nvirt) = x_mingeom+(i-1)*dx/2
+c           x(2, ntotal + nvirt) = y_mingeom
+
+         endif
         enddo
 
 c     Monaghan type virtual particle on the Left side
@@ -134,12 +162,13 @@ c        enddo
          vx(1, ntotal + i) = 0.
 	  vx(2, ntotal + i) = 0.
 	  if(itimestep.eq.1)rho (ntotal + i) = 1000.
-	   mass(ntotal + i) = rho (ntotal + i) * dx * dx
+	   mass(ntotal + i) = 0.
           if(itimestep.eq.1) p(ntotal + i) = 0. 
 	   u(ntotal + i) = 357.1
 	   itype(ntotal + i) = 0
 	    hsml(ntotal + i) = 1.3*dx/2
         enddo
+       endif
       endif
 
       if(dynamic.or.dummy)then
@@ -150,133 +179,10 @@ c           nvirt = nvirt + 1
 c	      x(1, ntotal + nvirt) = (i-1)*dx
 c            x(2, ntotal + nvirt) = xl
 c        enddo
-      if (static)then
-         do i = 1,np+3
-            do j = 1,3
-            nvirt = nvirt + 1
-            x(1, ntotal+nvirt) = x_maxgeom+(j-1)*dx+dx/2
-            x(2, ntotal+nvirt) = y_mingeom+(i-3)*dx-dx/2
-            enddo
-         enddo
-
-         do i = 1,mp+3
-            do j = 1,3
-            nvirt = nvirt + 1
-           x(1, ntotal+nvirt) = x_maxgeom-i*dx+dx/2
-            x(2, ntotal+nvirt) = y_mingeom-(j-1)*dx-dx/2
-            enddo
-         enddo
-
-         do i = 1,np
-            do j = 1,3
-            nvirt = nvirt + 1
-           x(1, ntotal+nvirt) = x_mingeom-(j-1)*dx-dx/2
-            x(2, ntotal+nvirt) = y_mingeom+i*dx-dx/2
-            enddo
-         enddo
-c    add obstacle
-         if(geometry)then
-c  on the left wall
-c          do i = 1,qp
-c            do j =1,i     
-c             nvirt = nvirt+1
-c              x(1,ntotal+nvirt) = x_mingeom+(qp-i)*dx+dx/2
-c              x(2,ntotal+nvirt) = y_mingeom+(nnp-j)*dx+dx/2
-c            enddo
-c          enddo
-
-c at the bottom
-         do i = np+1-qp,np+1+qp
-           do j = 1, nnp
-            y1 = a*(i*dx-dx/2)+nnp*dx-a*xl/2
-            y2 = a*(dx/2-i*dx)+nnp*dx+a*xl/2
-             if(j*dx-dx/2.lt.y1.and.j*dx-dx/2.lt.y2) then
-                nvirt = nvirt + 1
-               x(1,ntotal+nvirt) = x_mingeom+i*dx-dx/2
-               x(2,ntotal+nvirt) = y_mingeom+j*dx-dx/2
-             endif 
-            enddo
-          enddo
-        endif
-
-        do i =1,nvirt
-          vx(1, ntotal + i) = 0.
-          vx(2, ntotal +i) = 0.
-          rho(ntotal + i) = 1000.
-          p(ntotal + i) = 0.
-          mass(ntotal + i) = rho (ntotal + i) * dx * dx
-c  if(itimestep.eq.1)  p(ntotal + i)= 1000*9.8*(xl-x(2,ntotal+i))
-          u(ntotal + i) = 357.1
-          itype(ntotal + i) = -2
-          hsml(ntotal + i) = 1.3*dx
-        enddo
-
+       call fix_particle(xl,dx,nnp,ntotal,nvirt,v_gate,x,vx,p,rho,mass,
+     &     u,hsml,itype)
       endif
-
-      if(dambreak)then     
-       do i = 1, nnp
-          do j = 1,2
-   	   nvirt = nvirt + 1
-	   x(1, ntotal + nvirt) = x_maxgeom+(j-1)*dx/2
-           x(2, ntotal + nvirt) = y_maxgeom-(i-1)*dx-(j-1)*dx/2
-           p(ntotal+nvirt) = 0
-           if(x(2,ntotal+nvirt).le.bedheight) then
-             p(ntotal+nvirt)=9.8*1000*(bedheight-x(2,ntotal+nvirt))
-           endif
-          enddo
-       enddo
-     
-       do i = 1, mp
-          do j = 1,2
-   	    nvirt = nvirt + 1
-	    x(1, ntotal + nvirt) = x_maxgeom-(i-1)*dx-(j-1)*dx/2
-            x(2, ntotal + nvirt) = y_mingeom-(j-1)*dx/2
-            if (x(1,ntotal+nvirt).le.damlength)then
-             p(ntotal+nvirt) = ((j-1)*dx/2+damheight)*9.8*1000
-            else
-             p(ntotal+nvirt) = ((j-1)*dx/2+bedheight)*9.8*1000
-            endif
-           enddo 
-       enddo
-      
-      do i = 1, nnp
-         do j =1,2
-   	    nvirt = nvirt + 1
-	    x(1, ntotal + nvirt) = x_mingeom-(j-1)*dx/2
-           x(2, ntotal + nvirt) = y_mingeom+(i-1)*dx+(j-1)*dx/2
-           p(ntotal+nvirt) = 0
-           if(x(2,ntotal+nvirt).le.damheight) then
-             p(ntotal+nvirt)=9.8*1000*(damheight-x(2,ntotal+nvirt))
-           endif
-         enddo
-      enddo
-      if (gate) then
-          do i = 1,2*np
-            nvirt = nvirt + 1
-            x(1,ntotal+nvirt) = damlength
-            x(2,ntotal+nvirt) = y_mingeom+i*dx/2
-            p(ntotal+nvirt) = 0
-             if(x(2,ntotal+nvirt).le.damheight) then
-             p(ntotal+nvirt)=9.8*1000*(damheight-x(2,ntotal+nvirt))
-            endif
-         enddo
-      endif
-
-      do i = 1, nvirt
-        vx(1, ntotal + i) = 0.
-	  vx(2, ntotal +i) = 0.
-         if (i.gt.nvirt-np*2)  vx(2, ntotal +i) = v_gate  
-c        vx(1,ntotal + nvirt - 2) = v_inf
-	  rho(ntotal + i) = 1000.
-	  mass(ntotal + i) = rho (ntotal + i) * dx * dx
-c       if(itimestep.eq.1)  p(ntotal + i)= 1000*9.8*(xl-x(2,ntotal+i))
-	  u(ntotal + i) = 357.1
-	  itype(ntotal + i) = -2
-	  hsml(ntotal + i) = 1.3*dx
-        enddo
-       endif
-
-      endif
+    
 c     fixed ghost particles around the cavity, including particles in corner
       if (mirror) then
         do i = 1, ntotal
@@ -301,28 +207,20 @@ c    rightside
            x(2, ntotal + nvirt)=x(2,i)
            vx(1, ntotal + nvirt)=-vx(1,i)
             vx(2, ntotal + nvirt)=vx(2,i)
-            rho(ntotal + nvirt)=rho(i)
-            mass(ntotal + nvirt)=mass(i)
-            p(ntotal + nvirt)=p(i)
-            u(ntotal + nvirt)=u(i)
             mother(ntotal + nvirt)=i
            endif
 c    downside  except the wedge
         if ((x(2,i).gt.y_mingeom).and.
      &    (x(2,i).lt.y_mingeom+scale_k*hsml(i)))then
 
-          if ((x(2,i).lt.a*x(1,i)-a*xl/2-nnp*dx).or.
-     &    (x(2,i).lt.-a*x(1,i)+a*xl/2-nnp*dx))  then
+          if ((x(2,i).lt.a*x(1,i)-a*xl/2-a*qp*dx).or.
+     &    (x(2,i).lt.-a*x(1,i)+a*xl/2-a*qp*dx))  then
            nvirt=nvirt+1
            x(1, ntotal + nvirt) = x(1,i)
            x(2, ntotal + nvirt) = 2*y_mingeom-x(2,i)
            vx(1, ntotal + nvirt) = vx(1,i)
            vx(2, ntotal + nvirt) = -vx(2,i)
-           mass(ntotal + nvirt) = mass(i)
-             p(ntotal + nvirt) = p(i)
-            rho(ntotal + nvirt) = rho(i)
            mother(ntotal + nvirt)=i
-           u(ntotal + nvirt) = u(i)
            endif
        endif
 c   leftside
@@ -333,125 +231,31 @@ c   leftside
            x(2, ntotal + nvirt) = x(2,i)
            vx(1, ntotal + nvirt) = -vx(1,i)
            vx(2, ntotal + nvirt) = vx(2,i)
-           rho(ntotal + nvirt) = rho(i)
-           mass(ntotal + nvirt) = mass(i)
-           p(ntotal + nvirt) = p(i)
-           u(ntotal + nvirt) = u(i)
            mother(ntotal + nvirt) = i
            endif
-        if(geometry)then
-c wedge side
-         if  ((x(2,i).gt.-a*x(1,i)+a*xl/2-nnp*dx).and.
-c     &     (x(2,i).gt.-a*x(1,i)+a*xl/2-nnp*dx).and.
-     &     (x(2,i).lt.nnp*dx).and.(x(1,i).le.xl/2)) then
-               if (x(2,i).lt.a*x(1,i)-a*xl/2+nnp*dx+4*hsml(i))then 
-                 nvirt = nvirt + 1
-                 x(1,ntotal + nvirt)=((1-a**2)*x(1,i)+2*a*
-     &          x(2,i)- 2*a*(-a*xl/2+nnp*dx))/(a**2+1)
-                 x(2,ntotal + nvirt)=(2*a*x(1,i)+(a**2-1)*x(2,i)+
-     &          2*(-a*xl/2+nnp*dx))/(a**2+1)
-
-                 vx(1,ntotal + nvirt)=((sin(pi/3)+cos(pi/3))*
-     &          vx(1,i)**2+ (-cos(pi/3)+sin(pi/3))*vx(1,i)*vx(2,i))/
-     &           sqrt(vx(1,i)**2+vx(2,i)**2)            
-                 vx(2,ntotal + nvirt)=((sin(pi/3)+cos(pi/3))*
-     &          vx(1,i)*vx(2,i)+ (-cos(pi/3)+sin(pi/3))*vx(2,i)**2)/
-     &           sqrt(vx(1,i)**2+vx(2,i)**2)
-                 if(itimestep.eq.1)then
-                   do d=1,dim
-                    vx(d,ntotal+nvirt)=0
-                   enddo
-                 endif 
-              rho(ntotal + nvirt) = rho(i)
-c   over creation, in this case, twice
-               if(x(2,i).gt.nnp*dx-scale_k*hsml(i))then
-                  mass(ntotal+nvirt)=mass(i)/2
-               else
-                   mass(ntotal + nvirt) = mass(i)
-               endif
-               p(ntotal + nvirt) = p(i)
-               u(ntotal + nvirt) = u(i)
-               mother(ntotal + nvirt) = i
-c               print *,ntotal+nvirt,mother(ntotal+nvirt)
-              endif
-           endif        
-c             if  ((x(2,i).gt.a*x(1,i)-a*xl/2-nnp*dx).and.
-              if  ((x(2,i).gt.a*x(1,i)-a*xl/2-nnp*dx).and.
-     &     (x(2,i).lt.nnp*dx).and.(x(1,i).ge.xl/2)) then
-               if (x(2,i).lt.-a*x(1,i)+a*xl/2+nnp*dx+4*hsml(i))then
-                 nvirt = nvirt + 1
-                 x(1,ntotal + nvirt)=((1-a**2)*x(1,i)-2*a*
-     &          x(2,i)+2*a*(a*xl/2+nnp*dx))/(a**2+1)
-                 x(2,ntotal + nvirt)=(-2*a*x(1,i)+(a**2-1)*x(2,i)+
-     &          2*(a*xl/2+nnp*dx))/(a**2+1)
-                 vx(1,ntotal + nvirt)=((-sin(pi/3)-cos(pi/3))*
-     &          vx(1,i)**2+ (-cos(pi/3)+sin(pi/3))*vx(1,i)*vx(2,i))/
-     &           sqrt(vx(1,i)**2+vx(2,i)**2)
-                 vx(2,ntotal + nvirt)=((-sin(pi/3)-cos(pi/3))*
-     &          vx(1,i)*vx(2,i)+ (-cos(pi/3)+sin(pi/3))*vx(2,i)**2)/
-     &           sqrt(vx(1,i)**2+vx(2,i)**2)
-                  if(itimestep.eq.1)then
-                   do d=1,dim
-                    vx(d,ntotal+nvirt)=0
-                   enddo
-                 endif
-              rho(ntotal + nvirt) = rho(i)
-c   over creation, in this case, twice
-               if(x(2,i).gt.nnp*dx-scale_k*hsml(i))then
-                  mass(ntotal+nvirt)=mass(i)/2
-               else
-                   mass(ntotal + nvirt) = mass(i)
-               endif
-               p(ntotal + nvirt) = p(i)
-               u(ntotal + nvirt) = u(i)
-               mother(ntotal + nvirt) = i
-c               print *,ntotal+nvirt,mother(ntotal+nvirt)
-              endif
-           endif
-c   sharp corner (central immetry)
-        dps = sqrt((x(1,i)-corner(1,5))**2+(x(2,i)-corner(2,5))**2)
-        if ((x(2,i).gt.a*x(1,i)-a*xl/2+nnp*dx).and.
-     &    (x(2,i).gt.-a*x(1,i)+a*xl/2+nnp*dx).and.
-     &     (dps.lt.scale_k*hsml(i)))then
-            nvirt = nvirt + 1
-            do d = 1,dim
-             x(d,ntotal+nvirt)=2*corner(d,5)-x(d,i)
-             vx(d,ntotal+nvirt)=-vx(d,i)
-            enddo
-            mass(ntotal + nvirt)= mass(i)
-            p(ntotal + nvirt)= p(i)
-            rho(ntotal + nvirt) = rho(i)
-            u(ntotal + nvirt) = u(i)
-            mother(ntotal + nvirt) = i
-          endif
+        enddo
+        if(geom.ne.0)then
+          call geom_generate(itimestep,scale_k,corner,itype, hsml,slope,
+     &   qp,ntotal,nvirt,nwall,x,vx,mother,ocn)
         endif
-c  mirror particles in corner including corners of the wedge
-
-          do j=1,4
-           dps = sqrt((x(1,i)-corner(1,j))**2+(x(2,i)-corner(2,j))**2)             
-           if (dps.lt.scale_k*hsml(i)) then
-                nvirt=nvirt+1
-                do d=1,dim
-                   x(d,ntotal+nvirt)=2*corner(d,j)-x(d,i)
-                   vx(d,ntotal+nvirt)=-vx(d,i)
-                enddo
-              mass(ntotal + nvirt)=mass(i)
-              p(ntotal + nvirt)= p(i)
-              rho(ntotal + nvirt) =rho(i)
-               u(ntotal + nvirt)=u(i)
-               mother(ntotal + nvirt) = i
-               endif
-           enddo
-         enddo
-
-         do i=ntotal+1,ntotal+nvirt
+        do i=ntotal+nwall+1,ntotal+nvirt
             itype(i) = -2
             hsml(i)= 1.3*dx
+            p(i)=p(mother(i))
+            rho(i)=rho(mother(i))
+            u(i)=u(mother(i))
+           mass(i)=mass(mother(i))/ocn(mother(i))
+          if(geom.eq.1)then
            dps = sqrt((x(1,i)-corner(1,5))**2+(x(2,i)-corner(2,5))**2) 
-            if (dps.lt.scale_k*hsml(i))then
-               mass(i) = mass(mother(i))/3
+            if (x(2,i).gt.a*x(1,i)-a*xl/2+a*qp*dx-4*hsml(i).and.
+     &         x(2,i).gt.-a*x(1,i)+a*xl/2+a*qp*dx-4*hsml(i))then
+               mass(i)=mass(mother(i))/2
+              if (dps.lt.scale_k*hsml(i))then
+                 mass(i) = mass(mother(i))/3
+              endif
             endif
-         enddo
+           endif
+        enddo
        endif
       endif   
 

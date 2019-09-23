@@ -44,7 +44,7 @@ c      common nvirt
      &       dis_y, wi(maxn), nvx(dim,maxn),grap(dim,maxn),egrd(maxn)
       double precision x(dim,maxn),vx(dim,maxn),ddx(dim),dvx(dim,maxn),
      &       av(dim,maxn), maxvel, b, minvel, vel,sumvel, norp,
-     &       kai,v_inf,cita,a,xl,dx                          
+     &       kai,v_inf,cita,a,xl,dx, delta_r(dim,maxn)                          
      
 
       do i=1,maxn
@@ -296,8 +296,26 @@ c          if(i.eq.7555.or.i.eq.7556) print *,dvx(d,i),av(d,i)
             minvel = vel
             mini = i    
         endif
+       
       enddo
 
+      if (shifting) then
+        call shift_position(ntotal,nvirt,ns,maxvel,pair_i,pair_j,niac,
+     &   dt,x,delta_r)
+
+        do i = 1,ntotal
+            do d = 1,dim
+               x(d,i) = x(d,i)+delta_r(d,i)
+            enddo
+            
+            do d = 1,dim
+               vx(d,i) = vx(d,i)+dvx(d,i)*delta_r(d,i)
+               p(i) = p(i)+grap(d,i)*delta_r(d,i)
+            enddo
+            rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
+         enddo
+
+       endif
 c      print *,p(7555),p(7556),wi(7555),wi(7556)
 
 c     keep the gate moving to a certain height

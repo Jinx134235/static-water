@@ -3,7 +3,8 @@
 		  kernel.o internal_force.o eos.o density.o\
 		  hsml.o external_force.o art_visc.o viscosity.o\
 		  art_heat.o av_vel.o time_print.o time_elapsed.o\
-		  link_list.o grid_geom.o init_grid.o
+		  link_list.o grid_geom.o init_grid.o fix_particle.o\
+		  geom_generate.o shift_position.o
 
 # compiler
 FC = f77
@@ -48,6 +49,9 @@ external_force.o:param.inc
 viscosity.o:param.inc
 art_heat.o:param.inc
 av_vel.o:param.inc
+geom_generate.o:param.inc
+fix_particle.o:param.inc
+shift_position.o:param.inc
 time_print.o:time_print.f90
 	f77 -c time_print.f90
 time_elapsed.o:time_elapsed.f90

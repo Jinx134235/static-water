@@ -70,6 +70,15 @@ c          = 2, Georgios,2019
 c          = 3, Antuono.etc,2010
       integer filt
       parameter(filt = 0)
+ 
+c     Geometry
+c     geom = 0, no geometry
+c          = 1, triangle wedge
+c          = 2, continous curve, like sin,exp,cubic
+c          = 3, half sphere
+      integer geom
+      parameter(geom = 1)
+
 
 c     Switches for different senarios
 
@@ -100,14 +109,15 @@ c     mirror = .true. : mirror boundary
 c     gate = .true. : add moving gate in the dambreak simulation,only 
 c                     for dynamic
 c     dummy = .true. : dummy boundary
+c     shifting = .true. : shift algorithm
 
       logical summation_density, average_velocity, config_input,
      &        virtual_part, vp_input, visc, ex_force, heat_artificial,
      &        visc_artificial, self_gravity, nor_density, dynamic,
-     &        mirror, gate, dummy
+     &        mirror, gate, dummy, shifting
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .true. )
+      parameter ( average_velocity  = .false. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
@@ -116,11 +126,12 @@ c     dummy = .true. : dummy boundary
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .false. )            
+      parameter ( nor_density  = .true. )            
       parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
       parameter ( mirror = .true. )
       parameter ( dummy = .false. )
+      parameter ( shifting = .true. )
 
 c     Symmetry of the problem
 c     nsym = 0 : no symmetry,
@@ -140,7 +151,7 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 130 ) 
+     &            mmp = 64 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
