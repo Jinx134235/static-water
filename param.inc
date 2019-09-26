@@ -23,9 +23,9 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  1.28e0     ,
+      parameter ( x_maxgeom =  .39e0     ,
      &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  .64e0     ,
+     &            y_maxgeom =  .39e0     ,
      &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
@@ -69,7 +69,7 @@ c          = 1, Moltine & Clagrossi,2009
 c          = 2, Georgios,2019
 c          = 3, Antuono.etc,2010
       integer filt
-      parameter(filt = 0)
+      parameter(filt = 2)
  
 c     Geometry
 c     geom = 0, no geometry
@@ -77,7 +77,7 @@ c          = 1, triangle wedge
 c          = 2, continous curve, like sin,exp,cubic
 c          = 3, half sphere
       integer geom
-      parameter(geom = 1)
+      parameter(geom = 0)
 
 
 c     Switches for different senarios
@@ -126,12 +126,12 @@ c     shifting = .true. : shift algorithm
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .true. )            
+      parameter ( nor_density  = .false. )            
       parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
       parameter ( mirror = .true. )
       parameter ( dummy = .false. )
-      parameter ( shifting = .true. )
+      parameter ( shifting = .false. )
 
 c     Symmetry of the problem
 c     nsym = 0 : no symmetry,
@@ -151,7 +151,7 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 64 ) 
+     &            mmp = 39 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
@@ -165,5 +165,5 @@ c    Switch for different benchmarks
       logical dambreak, static, geometry
       parameter ( dambreak = .false.)
       parameter ( static = .true.)
-      parameter ( geometry = .true.)
+      parameter ( geometry = .false.)
 

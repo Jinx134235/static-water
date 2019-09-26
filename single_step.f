@@ -71,9 +71,25 @@ c      common nvirt
       v_inf = 0.
       kai = 0.
       cita = 0.
-c---  Positions of virtual (boundary) particles:
-c---  call virt_part only once when implying dynamic boundary
-       if(dynamic.or.dummy)then
+       maxvel = 0.e0
+      minvel = 1.e1
+      sumvel = 0.e0
+c  velocity statistic
+      do i =1,ntotal
+        vel = sqrt(vx(1,i)**2+vx(2,i)**2)
+         sumvel = sumvel + vel
+         if (vel.gt.maxvel)then
+            maxvel = vel
+            maxi = i
+         endif
+         if (vel.lt.minvel)then
+           minvel = vel
+            mini = i
+        endif
+      enddo
+c  generate virtual particles
+      if(dynamic.or.dummy.or..not.mirror)then
+
          if(itimestep.eq.1) call virt_part(itimestep, ntotal,nvirt,hsml,
      &       mass,x,vx,rho,u,p,itype, nwall,mother)
           
@@ -100,7 +116,7 @@ c     and optimzing smoothing length
       endif
      
       ntotalvirt = ntotal + nvirt 
-c      print *,ntotal,nvirt
+c      print *,itimestep
       if (nnps.eq.1) then 
         call direct_find(itimestep, ntotal,nvirt, hsml,x,niac,pair_i,
      &       pair_j,w,dwdx,ns)
@@ -123,7 +139,7 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
          enddo
       endif
 
-      call con_density(ntotalvirt,mass,niac,pair_i,pair_j,
+      call con_density(ntotal,mass,niac,pair_i,pair_j,
      &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
    
       if (dynamic) then
@@ -162,8 +178,8 @@ c           if(i.eq.ntotal+1) print *,nvx(1,i),sumw(i)
 
       if(mirror) then
           if (nor_density.and.mod(itimestep,30).eq.0) then
-         call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
-     &        itype,rho)
+            call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
+     &         itype,rho)
           endif
 c   pressure correction as well as density     
 c        b = c0**2*1000/7
@@ -179,7 +195,7 @@ c        b = c0**2*1000/7
       endif
 c  Shepard filter
        if (nor_density.and.mod(itimestep,30).eq.0) then
-         call sum_density(ntotal,hsml,mass,niac,pair_i,pair_j,w,
+         call sum_density(ntotalvirt,hsml,mass,niac,pair_i,pair_j,w,
      &        itype,rho)
        endif
 
@@ -193,7 +209,8 @@ c---  Internal forces:(4.42)/(4.43)  4.58/4.59
      &     eta, pair_i,pair_j,dwdx,u,itype,x,t,c,p,grap,indvxdt,
      &     tdsdt,du)
 
-c      print *,grap(1,1),grap(2,1) 
+c          enddo
+c       print *,grap(1,1),grap(2,1) 
 
 c---  Artificial viscosity:(4.66)
       if (visc_artificial) call art_visc(ntotal,hsml,mass,x,vx,
@@ -202,7 +219,7 @@ c---  Artificial viscosity:(4.66)
       
 c---  External forces:(4.93)
          if (ex_force) call ext_force(ntotalvirt,mass,x,vx,niac,
-     &                  pair_i,pair_j,itype, hsml, exdvxdt)
+     &                  pair_i,pair_j,itype, hsml,maxvel, exdvxdt)
 
 c     Calculating the neighboring particles and undating HSML (4.80)/(4.81)
       
@@ -259,46 +276,41 @@ c      print *,indvxdt(2,7555),indvxdt(2,7556)
 c      print *,ardvxdt(2,7555),ardvxdt(2,7556)
        endif
 c      print *, indvxdt(dim,39),ardvxdt(dim,39)    
-      maxvel = 0.e0
-      minvel = 1.e1
-      sumvel = 0.e0
+c      maxvel = 0.e0
+c      minvel = 1.e1
+c      sumvel = 0.e0
       do i=1,ntotal
-c          print *,indvxdt(dim,i)
+c        if(i.eq.1)   print *,exdvxdt(dim,i)
         do d=1,dim
 c          dvx(1,i)=0
           dvx(d,i) = indvxdt(d,i) + exdvxdt(d,i) + ardvxdt(d,i)          
         enddo
-c        gravity
+c     gravity, damping technique(Adami,2012)
         if (self_gravity) then
-             if(itimestep*dt.le.damp_t)then
-               cita = 0.5*(sin((-0.5+itimestep*dt/damp_t)*pi)+1)
-               dvx(dim,i) = dvx(dim,i)-9.8*cita
-            else
+c           if(itimestep*dt.le.damp_t)then
+c               cita = 0.5*(sin((-0.5+itimestep*dt/damp_t)*pi)+1)
+c                cita = (itimestep*dt/damp_t)**3
+c                dvx(dim,i) = dvx(dim,i)-9.8*cita
+c            else if(itimestep*dt.gt.damp_t/2.and.
+c     & itimestep*dt.le.damp_t)then
+c                cita = 4*(itimestep*dt/damp_t-1)**3+1
+c                dvx(dim,i) = dvx(dim,i)-9.8*cita
+c            else
                dvx(dim,i) = dvx(dim,i)-9.8
-            endif
+c            endif
          endif
-
+c         if(abs(dvx(2,int(ntotal/2))).le.1e-7) print *,itimestep
           du(i) = du(i) + avdudt(i) + ahdudt(i)
            u(i) = u(i) + dt*du(i)
         if(u(i).lt.0)  u(i) = 0.         
         do d = 1, dim                   
           vx(d, i) = vx(d, i) + dt * dvx(d, i) + av(d, i)
-c          if(i.eq.7555.or.i.eq.7556) print *,dvx(d,i),av(d,i)
+c          if(dvx(2,).7556) print *,dvx(d,i),av(d,i)
           x(d, i) = x(d, i) + dt * vx(d, i)       
         enddo
-         vel = sqrt(vx(1,i)**2+vx(2,i)**2)
-         sumvel = sumvel + vel
-         if (vel.gt.maxvel)then
-            maxvel = vel
-            maxi = i
-         endif
-         if (vel.lt.minvel)then
-            minvel = vel
-            mini = i    
-        endif
-       
+      
       enddo
-
+c      if(abs(dvx(2,int(ntotal/2))).le.1e-6) print *,itimestep
       if (shifting) then
         call shift_position(ntotal,nvirt,ns,maxvel,pair_i,pair_j,niac,
      &   dt,x,delta_r)
@@ -345,15 +357,16 @@ c       open(30,file="../data/trace_p.dat")
         close(60) 
       endif 
      
-c      if (mod(itimestep,print_step).eq.0) then      
-c          write(*,*) '**** particle moving fastest ****', maxi, maxvel         
+      if (mod(itimestep,print_step).eq.0) then      
+          write(*,*) '**** particle moving fastest ****', maxi, maxvel         
+          write(*,*) dvx(2,int(ntotal/2))
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
-c          write(*,*) '**** average velocity:', real(sumvel/ntotal)
+          write(*,*) '**** average velocity:', real(sumvel/ntotal)
 c           write(*,*) '**** particle moving slowest ****', mini         
 c         write(*,102)'velocity(y)','internal(y)','total(y)'   
 c          write(*,103)  x(1,mini),x(2,mini),vx(1,mini),vx(2,mini) 
-c      endif
+      endif
       
 c100   format(1x,4(2x,e12.6))     
 c101   format(1x,4(2x,e12.6))          

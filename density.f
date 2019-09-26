@@ -165,29 +165,8 @@ c     checking the normalization condition
 c        if (pair_i(k).eq.1) print *, pair_j(k)
          wi(i) = wi(i) + mass(j)/rho(j)*w(k)
          wi(j) = wi(j) + mass(i)/rho(i)*w(k)
-        do d=1,dim
-           dx(d)=x(d,i)-x(d,j)
-        enddo   
-        xcc = dx(1)*dwdx(1,k)
-         do d=2,dim
-           xcc = xcc+dx(d)*dwdx(d,k)
-         enddo
-         adf(i) = adf(i)+xcc*mass(j)/rho(j)
-         adf(j) = adf(j)+xcc*mass(i)/rho(i)
       enddo
       
-c   calculate renormalized gradient of density
-      do k=1,niac
-        i = pair_i(k)
-        j = pair_j(k)
-        do d=1,dim
-         norrho(d,i) = norrho(d,i)+
-     & (rho(j)-rho(i))/adf(i)*mass(j)/rho(j)*dwdx(d,k)
-         norrho(d,j) = norrho(d,j)+
-     & (rho(i)-rho(j))/adf(j)*mass(i)/rho(i)*dwdx(d,k)    
-        enddo
-      enddo
-
       open(10, file="../data/kernel.dat")
     
       do i = 1,ntotal
@@ -201,7 +180,7 @@ c     Secondly calculate the rho integration over the space
         drhodt(i) = 0.
       enddo
      
-      delta  = 0.1
+      delta  = 1.e-1
 c      c = 29.32
       b = c0**2*1000/7
       do k=1,niac      
@@ -224,7 +203,7 @@ c  add filter to the continuity equation
 c  molteni        
         if (filt.eq.1) then
          do d=1,dim
-            psi(d) = 2*(rho(j)-rho(i))*dx(d)/sqrt(r)
+            psi(d) = -2*(rho(j)-rho(i))*dx(d)/sqrt(r)
           enddo
          xcc = psi(1)*dwdx(1,k)
          do d=2,dim
@@ -233,13 +212,14 @@ c  molteni
 c           if(i.eq.1) print *,'before filter',drhodt(i)
           drhodt(i) = drhodt(i) + delta*hsml(i)*c0*xcc*mass(j)/rho(j)
 c           if (i.eq.1) print *,'after filter',drhodt(i) 
-          drhodt(j) = drhodt(j) + delta*hsml(j)*c0*xcc*mass(i)/rho(i)
+          drhodt(j) = drhodt(j) - delta*hsml(j)*c0*xcc*mass(i)/rho(i)
 c   georgios
        elseif (filt.eq.2) then
-           rhoh = 1000*((1000*9.8*dx(dim)+1)/b-1)**(1/7)
+           rhoh = 1000*((9800*(y_maxgeom-x(2,j))/b)**(1/7)-
+     &     (9800*(y_maxgeom-x(2,i))/b)**(1/7))
 c           if(k.le.10)print *,rhoh  
            do d=1,dim
-            psi(d) = 2*(rho(j)-rho(i)-rhoh)*dx(d)/sqrt(r)
+            psi(d) = -2*(rho(j)-rho(i)-rhoh)*dx(d)/sqrt(r)
           enddo
 c          if(k.eq.1) print*,psi
            xcc = psi(1)*dwdx(1,k)
@@ -249,27 +229,110 @@ c          if(k.eq.1) print*,psi
 c           if (i.eq.1) print *,'before filter',drhodt(i) 
           drhodt(i) = drhodt(i) + delta*hsml(i)*c0*xcc*mass(j)/rho(j)
 c           if (i.eq.1) print *,'after filter',drhodt(i) 
-          drhodt(j) = drhodt(j) + delta*hsml(j)*c0*xcc*mass(i)/rho(i)
-
+          drhodt(j) = drhodt(j) - delta*hsml(j)*c0*xcc*mass(i)/rho(i)
+        endif
+      enddo
 c  antuono(delta-sph)
-       elseif (filt.eq.3) then
-          ucc = (norrho(1,i)+norrho(1,j))*dx(1)
-          do d=2,dim
-            ucc = ucc + (norrho(d,i)+norrho(d,j))*dx(d)
-          enddo  
-          do d=1,dim
-            psi(d) = (rho(j)-rho(i)+ucc/2)*dx(d)/r
-          enddo
-          xcc = psi(1)*dwdx(1,k)
-          do d=2,dim
-           xcc = xcc+psi(d)*dwdx(d,k)
-          enddo
-          drhodt(i) = drhodt(i) + delta*hsml(i)*c*xcc*mass(j)/rho(j)
-c           if (i.eq.1) print *,'after filter',drhodt(i) 
-          drhodt(j) = drhodt(j) + delta*hsml(j)*c*xcc*mass(i)/rho(i)
-
-         endif
-
-       enddo    
-    
+       if (filt.eq.3) then
+         call antuono_filter(ntotal,mass,niac,pair_i,pair_j,hsml,w,
+     &  dwdx,drhodt,x, itype,vx,rho,wi)
+       endif
       end
+
+
+      subroutine antuono_filter(ntotal,mass,niac,pair_i,pair_j,hsml,w,
+     &  dwdx,drhodt,x, itype,vx,rho,wi)
+
+c----------------------------------------------------------------------
+c  Subroutine for delta-sph, which will add a diffusion term to
+c  contibuity equation. there's a matrix inversion process inside, which             
+c  is simple in 2-d case, however, not externable
+c  drhodt:[in|out]
+
+
+      implicit none
+      include 'param.inc'
+      
+      integer ntotal,niac,itype(maxn),pair_i(max_interaction),
+     &        pair_j(max_interaction)
+      double precision mass(maxn), hsml(maxn), w(max_interaction),
+     &       dwdx(3,max_interaction),rho(maxn),drhodt(maxn),wi(maxn),
+     &       x(dim,maxn),vx(dim,maxn),delta, r, dx(dim),norrho(4,maxn),
+     &       grdrho(dim,maxn),p,q,psi(dim)
+      integer i, j, k, d, dd,idx
+      real innor_1(2,2),innor_2(2,2)
+
+      innor_1(:,:) = 0.
+      innor_2(:,:) = 0.
+c      innorrho(:,:) = 0.
+      delta = 0.1
+      do i = 1,ntotal
+        do d =1,4
+          if(d.le.dim) grdrho(d,i) = 0.
+          norrho(d,i) = 0.
+          enddo
+       enddo 
+
+      do k=1,niac
+        i = pair_i(k)
+        j = pair_j(k)
+c        if (pair_i(k).eq.1) print *, pair_j(k)
+c         wi(i) = wi(i) + mass(j)/rho(j)*w(k)
+c         wi(j) = wi(j) + mass(i)/rho(i)*w(k)
+        do d=1,dim
+           dx(d)=x(d,i)-x(d,j)
+           do dd =1,dim
+             idx = dd+(d-1)*dim
+             norrho(idx,i)=norrho(idx,i)+dx(d)*dwdx(dd,k)*mass(j)/rho(j)
+             norrho(idx,j)=norrho(idx,j)+dx(d)*dwdx(dd,k)*mass(i)/rho(i)
+           enddo
+        enddo   
+      enddo
+c  inverse process 
+      do k =1,niac
+         i = pair_i(k)
+         j = pair_j(k)
+         p  = norrho(1,i)*norrho(4,i)-norrho(2,i)*norrho(3,i)
+         q  = norrho(1,j)*norrho(4,j)-norrho(2,j)*norrho(3,j)
+         innor_1(1,1) = norrho(4,i)/p
+         innor_1(1,2) = -norrho(2,i)/p
+         innor_1(2,1) = -norrho(3,i)/p
+         innor_1(2,2) = norrho(1,i)/p
+          innor_2(1,1) = norrho(4,j)/q
+         innor_2(1,2) = -norrho(2,j)/q
+         innor_2(2,1) = -norrho(3,j)/q
+         innor_2(2,2) = norrho(1,j)/q
+          do d = 1,dim
+             p = innor_1(d,1)*dwdx(1,k)+innor_1(d,2)*dwdx(2,k)
+             q = innor_2(d,1)*dwdx(1,k)+innor_2(d,2)*dwdx(2,k)
+             grdrho(d,i) = grdrho(d,i)+(rho(j)-rho(i))*p*mass(j)/rho(j)
+             grdrho(d,j) = grdrho(d,j)+(rho(j)-rho(i))*q*mass(i)/rho(i)
+           enddo
+       enddo
+c       print *,'normalized density:',grdrho(1,1),grdrho(2,1)
+c       print *,'before filter:',drhodt(1)
+       do k = 1,niac
+          i = pair_i(k)
+          j = pair_j(k)
+
+          r =0.
+         do d=1,dim
+c            dvx(d) = vx(d,i) - vx(d,j)
+            dx(d) = x(d,j) - x(d,i)
+            r = r+dx(d)**2
+          enddo
+          do d = 1,dim
+           psi(d) = 2*(rho(j)-rho(i))*dx(d)/r-(grdrho(d,i)+grdrho(d,j))
+c           if (i.eq.1.and.d.eq.2) print *,j,psi(d),dwdx(d,k)
+           drhodt(i) = drhodt(i)+delta*hsml(i)*c0*psi(d)*
+     & dwdx(d,k)*mass(j)/rho(j)
+           drhodt(j) = drhodt(j)-delta*hsml(j)*c0*psi(d)*
+     & dwdx(d,k)*mass(i)/rho(i)
+
+          enddo
+        enddo
+c        print *,'after filter:',drhodt(1)
+      end
+
+
+   

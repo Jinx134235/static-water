@@ -74,7 +74,7 @@ c              p_record(1) = itimestep
              i = itimestep/print_step 
              p_record(i) = p(int(ntotal/2))
              v_record(1,i) = sumvel/ntotal
-             v_record(2,i) = vx(2,39)
+             v_record(2,i) = vx(2,ntotal/2)
         endif
 c        print *,vx(2,1)
 c        if (vx(2,1).gt.0) then

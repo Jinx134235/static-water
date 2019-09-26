@@ -208,8 +208,8 @@ c      np = n
         vx(2, i) = 0.
 c--- original density,pressure & mass of the particles    
 c--- either zero pressure or hydrostatic works
-        p(i) = 0
-c        p(i) = 9.8*1000*(yl-x(2,i))
+c        p(i) = 0
+        p(i) = 9.8*1000*(yl-x(2,i))
         rho(i) = 1000
         mass(i) = dx*dy*rho(i)
         u(i)=357.1
@@ -299,48 +299,48 @@ c       enddo
 
 c  geometry 2
       do i = 1,m
-        do j = 1,n
+        do j = 1,np
           y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
           y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
 c   distribution 2:modified alongside wedge wall
-          if (j*dx-dx/2.gt.y1+5.5*dx.or.j*dx-dx/2.gt.y2+5.5*dx.or.
-     &     j*dx-dx/2.gt.(n-mp)*dx) then
+c          if (j*dx-dx/2.gt.y1+5.5*dx.or.j*dx-dx/2.gt.y2+5.5*dx.or.
+c     &     j*dx-dx/2.gt.(n-mp)*dx) then
 c   distribution 1:keep the same as original
-c           if (j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2) then
+c           if (j*dx-dx/2.gt.y1+dx.or.j*dx-dx/2.gt.y2+dx) then
 c   distribution 3:another set of grid                    
-c          if (a*(j-1/2)*dx.gt.y1.or.a*(j-1/2)*dx.gt.y2) then
+          if (a*(j-1/2)*dx.gt.y1.or.a*(j-1/2)*dx.gt.y2) then
             ntotal = ntotal + 1
              x(1,ntotal) = x_mingeom+i*dx-dx/2
-             x(2,ntotal) = y_mingeom+(j-0.5)*dx
+             x(2,ntotal) = y_mingeom+a*(j-0.5)*dx
           endif
         enddo
       enddo
 
 c   leftside&rightside of wedge, symmetry to centerline
-c      do i = 1,m+1
-c        do j = 1,np
-c          y1 = a*(i-1)*dx+(n-mp)*dx-a*xl/2
-c          y2 = -a*(i-1)*dx+(n-mp)*dx+a*xl/2
-c         if (a*(j-1)*dx.gt.y1.or.a*(j-1)*dx.gt.y2) then
-c            ntotal = ntotal + 1
-c             x(1,ntotal) = x_mingeom+(i-1)*dx
-c             x(2,ntotal) = y_mingeom+a*(j-1)*dx
-c          endif
-c        enddo
-c      enddo
+      do i = 1,m+1
+        do j = 1,np
+          y1 = a*(i-1)*dx+(n-mp)*dx-a*xl/2
+          y2 = -a*(i-1)*dx+(n-mp)*dx+a*xl/2
+         if (a*(j-1)*dx.gt.y1.or.a*(j-1)*dx.gt.y2) then
+            ntotal = ntotal + 1
+             x(1,ntotal) = x_mingeom+(i-1)*dx
+             x(2,ntotal) = y_mingeom+a*(j-1)*dx
+          endif
+        enddo
+      enddo
 c
 c   distribution 2
-       do j = 1,2*qp+2
-          do i =1,3
-            ntotal = ntotal+2
-             x(1,ntotal-1) = cos(theta)*((j-1)*dx+dx/4-(i-1)*dx/a)-
-     &    sin(theta)*((i-1)*dx+a*dx/4)+xl/2-(n-mp)*dx/a 
-             x(1,ntotal) = xl-x(1,ntotal-1)
-            x(2,ntotal-1) = cos(theta)*((i-1)*dx+a*dx/4)+sin(theta)*
-     &    ((j-1)*dx+dx/4-(i-1)*dx/a)
-            x(2,ntotal) = x(2,ntotal-1)
-           enddo
-       enddo
+c       do j = 1,2*qp+1
+c          do i =1,3
+c            ntotal = ntotal+2
+c             x(1,ntotal-1) = cos(theta)*((j-1)*dx+dx/4-(i-1)*dx/a)-
+c     &    sin(theta)*((i-1)*dx+a*dx/4)+xl/2-(n-mp)*dx/a 
+c             x(1,ntotal) = xl-x(1,ntotal-1)
+c            x(2,ntotal-1) = cos(theta)*((i-1)*dx+a*dx/4)+sin(theta)*
+c     &    ((j-1)*dx+dx/4-(i-1)*dx/a)
+c            x(2,ntotal) = x(2,ntotal-1)
+c           enddo
+c       enddo
 
  
 c       ntotal = ntotal+2

@@ -1,5 +1,5 @@
       subroutine ext_force(ntotal,mass,x,vx,niac,pair_i,pair_j,
-     &       itype,hsml,dvxdt)
+     &       itype,hsml,maxvel,dvxdt)
 
 c--------------------------------------------------------------------------
 c     Subroutine to calculate the external forces, e.g. gravitational forces.      
@@ -14,6 +14,7 @@ c     pair_i : List of first partner of interaction pair            [in]
 c     pair_j : List of second partner of interaction pair           [in]
 c     itype   : type of particles                                   [in]
 c     hsml   : Smoothing Length                                     [in]
+c     maxvel : maximum of velocity                                  [in]
 c     dvxdt   : Acceleration with respect to x, y and z            [out] 
 
       implicit none
@@ -22,7 +23,7 @@ c     dvxdt   : Acceleration with respect to x, y and z            [out]
       integer ntotal, itype(maxn), niac,
      &        pair_i(max_interaction), pair_j(max_interaction)
       double precision mass(maxn), x(dim,maxn), hsml(maxn),          
-     &       dvxdt(dim,maxn),vx(dim,maxn)
+     &       dvxdt(dim,maxn),vx(dim,maxn),maxvel
       integer i, j, k, d
       double precision dx(dim), rr, f, rr0, dd, p1, p2     
            
@@ -33,8 +34,9 @@ c     dvxdt   : Acceleration with respect to x, y and z            [out]
       enddo
         
 c     Boundary particle force and penalty anti-penetration force. 
-      rr0 = 1.e-2
-      dd = 8.6e2
+      rr0 = 2.e-2
+      dd = maxvel**2
+c      print *,dd
       p1 = 12
       p2 = 4
       

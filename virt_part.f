@@ -57,6 +57,7 @@ c      common nvirt
 c   in this case, the computing domain is defaultly set as square
        
 	nvirt = 0
+        nwall = 0
         do i = 1,ntotal
           ocn(i) =1
         enddo
@@ -67,21 +68,21 @@ c       print *,a
        np = 32
        nnp = 10
        qp = int(nnp/a)+1
-c      else        
+       if(.not.geometry) qp = 0     
 c        np = mmp
 c      endif
       
 
 	xl = x_maxgeom-x_mingeom
-	dx = 2.e-2
+	dx = xl/mmp
         period = sqrt(3.)*pi/(2*nnp*dx)
 
 c  speed of the gate(dambreak)/ speed of the top(cavityflow)        
       v_gate = 1.5
 c      h = hsml(1)
 c   coordinates of the corners
-      corner(1,1:4)=(/x_mingeom,x_maxgeom,xl/2-nnp*dx/a,xl/2+nnp*dx/a/)
-      corner(:,5)=(/xl/2,nnp*dx/)
+      corner(1,1:4)=(/x_mingeom,x_maxgeom,xl/2-qp*dx,xl/2+qp*dx/)
+      corner(:,5)=(/xl/2,a*qp*dx/)
 c      corner(:,2)=(/xl/2-nnp*dx/a,y_mingeom/)
 c      print *,corner
       if(.not.dynamic.and..not.dummy) then
@@ -95,7 +96,7 @@ c          x(2, ntotal + nvirt) = xl
 c          vx(1, ntotal + nvirt) = 0.
 c	  vx(2, ntotal + nvirt) = 0.
 c        enddo
-       if(itimestep.eq.1.and.geom.eq.2) then   
+       if(geom.eq.1.and.ex_force) then   
 c     Monaghan type virtual particle on the Lower side
 
         do i = 1, 2*mp+1
@@ -104,17 +105,17 @@ c     Monaghan type virtual particle on the Lower side
          nvirt = nvirt + 1
            x(1, ntotal + nvirt) = x_mingeom+(i-1)*dx/2
            x(2, ntotal + nvirt) = y_mingeom
-          endif
-        enddo
-        do i = 1,2*mp+1
-         if((i-1)*dx/2.gt.xl/2-nnp*dx/a.and.(i-1)*dx/2.lt.xl/2+
-     &   nnp*dx/a) then
-           nvirt = nvirt + 1
-           x(1,ntotal+nvirt)=x_mingeom+(i-1)*dx/2
-           x(2,ntotal+nvirt)=nnp*dx*sin(period*(x(1,ntotal+nvirt)-
-     &     xl/2+nnp*dx/a))
-           slope(ntotal+nvirt)=nnp*dx*period*cos(period*
-     &     (x(1,ntotal+nvirt)-xl/2+nnp*dx/a))
+c          endif
+c        enddo
+c        do i = 1,2*mp+1
+c         if((i-1)*dx/2.gt.xl/2-nnp*dx/a.and.(i-1)*dx/2.lt.xl/2+
+c     &   nnp*dx/a) then
+c           nvirt = nvirt + 1
+c           x(1,ntotal+nvirt)=x_mingeom+(i-1)*dx/2
+c           x(2,ntotal+nvirt)=nnp*dx*sin(period*(x(1,ntotal+nvirt)-
+c     &     xl/2+nnp*dx/a))
+c           slope(ntotal+nvirt)=nnp*dx*period*cos(period*
+c     &     (x(1,ntotal+nvirt)-xl/2+nnp*dx/a))
 c           dps = sqrt((x(1,ntotal+nvirt)-x(1,ntotal+nvirt-1))**2+
 c     &      (x(2,ntotal+nvirt)-x(2,ntotal+nvirt-1))**2)
 c           if(dps.gt.dx/2)then
@@ -152,21 +153,24 @@ c     Monaghan type virtual particle on the Right side
           x(2, ntotal + nvirt) = y_mingeom+i*dx/2  
        enddo
 c    Monaghan type virtual particle as obsatacle 
-c       do i = 1, 20
-c          nvirt = nvirt + 1
-c           x(1,ntotal+nvirt) = x_mingeom+(np+i)*dx
-c          x(2,ntotal+nvirt) = y_mingeom+i*dx
-c        enddo   
+       do i = 1, qp*2
+          nvirt = nvirt + 2
+          x(1,ntotal+nvirt-1) = x_mingeom+(np-qp)*dx+i*dx/2
+          x(1,ntotal+nvirt) = xl-x(1,ntotal+nvirt-1)
+          x(2,ntotal+nvirt-1) = y_mingeom+a*i*dx/2
+          x(2,ntotal+nvirt) = x(2,ntotal+nvirt-1)
+       enddo
+
         nwall = nvirt
 	do i = 1, nvirt
          vx(1, ntotal + i) = 0.
 	  vx(2, ntotal + i) = 0.
 	  if(itimestep.eq.1)rho (ntotal + i) = 1000.
-	   mass(ntotal + i) = 0.
+	   mass(ntotal + i) = rho(ntotal+i)*dx*dx
           if(itimestep.eq.1) p(ntotal + i) = 0. 
 	   u(ntotal + i) = 357.1
 	   itype(ntotal + i) = 0
-	    hsml(ntotal + i) = 1.3*dx/2
+	    hsml(ntotal + i) = 1.3*dx
         enddo
        endif
       endif
@@ -213,15 +217,15 @@ c    downside  except the wedge
         if ((x(2,i).gt.y_mingeom).and.
      &    (x(2,i).lt.y_mingeom+scale_k*hsml(i)))then
 
-          if ((x(2,i).lt.a*x(1,i)-a*xl/2-a*qp*dx).or.
-     &    (x(2,i).lt.-a*x(1,i)+a*xl/2-a*qp*dx))  then
+c          if ((x(2,i).lt.a*x(1,i)-a*xl/2-a*qp*dx).or.
+c     &    (x(2,i).lt.-a*x(1,i)+a*xl/2-a*qp*dx))  then
            nvirt=nvirt+1
            x(1, ntotal + nvirt) = x(1,i)
            x(2, ntotal + nvirt) = 2*y_mingeom-x(2,i)
            vx(1, ntotal + nvirt) = vx(1,i)
            vx(2, ntotal + nvirt) = -vx(2,i)
            mother(ntotal + nvirt)=i
-           endif
+c           endif
        endif
 c   leftside
           if ((x(1,i).gt.x_mingeom).and.
@@ -233,12 +237,24 @@ c   leftside
            vx(2, ntotal + nvirt) = vx(2,i)
            mother(ntotal + nvirt) = i
            endif
-        enddo
+        do j = 1,2
+           dps = sqrt((x(1,i)-corner(1,j))**2+(x(2,i)-corner(2,j))**2)
+           if(dps.lt.scale_k*hsml(i).and.dps.gt.1e-9)then
+               nvirt = nvirt+1
+               do d =1,dim
+                 x(d,ntotal+nvirt)=2*corner(d,j)-x(d,i)
+                 vx(d,ntotal+nvirt)=-vx(d,i)
+                 enddo
+                mother(ntotal+nvirt)=i
+            endif
+           enddo
+      enddo
+
         if(geom.ne.0)then
           call geom_generate(itimestep,scale_k,corner,itype, hsml,slope,
      &   qp,ntotal,nvirt,nwall,x,vx,mother,ocn)
         endif
-        do i=ntotal+nwall+1,ntotal+nvirt
+       do i=ntotal+nwall+1,ntotal+nvirt
             itype(i) = -2
             hsml(i)= 1.3*dx
             p(i)=p(mother(i))
