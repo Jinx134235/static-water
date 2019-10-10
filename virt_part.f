@@ -66,7 +66,7 @@ c      if(geometry) then
 c       print *,a
        mp = 64 
        np = 32
-       nnp = 10
+       nnp = 80
        qp = int(nnp/a)+1
        if(.not.geometry) qp = 0     
 c        np = mmp

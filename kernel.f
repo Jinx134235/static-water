@@ -86,8 +86,8 @@ c----    first derivative of kernel, the order of magnitude is about 1e7
 	if(q.ge.0.and.q.le.1) then
           w = factor * ( (3-q)**5 - 6*(2-q)**5 + 15*(1-q)**5 )
           do d= 1, dim
-            dwdx(d) = factor * ( (-120 + 120*q - 50*q**2) 
-     &                        / hsml**2 * dx(d) )
+            dwdx(d) = factor * (-5*(3-q)**4 + 30*(2-q)**4 - 75*(1-q)**4) 
+     &                        / hsml * (dx(d)/r) 
           enddo 
 	else if(q.gt.1.and.q.le.2) then
           w = factor * ( (3-q)**5 - 6*(2-q)**5 )

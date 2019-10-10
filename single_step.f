@@ -139,7 +139,7 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
          enddo
       endif
 
-      call con_density(ntotal,mass,niac,pair_i,pair_j,
+      call con_density(ntotalvirt,mass,niac,pair_i,pair_j,
      &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
    
       if (dynamic) then
@@ -287,17 +287,17 @@ c          dvx(1,i)=0
         enddo
 c     gravity, damping technique(Adami,2012)
         if (self_gravity) then
-c           if(itimestep*dt.le.damp_t)then
-c               cita = 0.5*(sin((-0.5+itimestep*dt/damp_t)*pi)+1)
+           if(itimestep*dt.le.damp_t)then
+               cita = 0.5*(sin((-0.5+itimestep*dt/damp_t)*pi)+1)
 c                cita = (itimestep*dt/damp_t)**3
 c                dvx(dim,i) = dvx(dim,i)-9.8*cita
 c            else if(itimestep*dt.gt.damp_t/2.and.
 c     & itimestep*dt.le.damp_t)then
 c                cita = 4*(itimestep*dt/damp_t-1)**3+1
 c                dvx(dim,i) = dvx(dim,i)-9.8*cita
-c            else
+            else
                dvx(dim,i) = dvx(dim,i)-9.8
-c            endif
+            endif
          endif
 c         if(abs(dvx(2,int(ntotal/2))).le.1e-7) print *,itimestep
           du(i) = du(i) + avdudt(i) + ahdudt(i)

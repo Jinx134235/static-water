@@ -23,9 +23,9 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  .39e0     ,
+      parameter ( x_maxgeom =  .40e0     ,
      &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  .39e0     ,
+     &            y_maxgeom =  .40e0     ,
      &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
@@ -45,7 +45,7 @@ c     nnps = 1 : Simplest and direct searching
 c            2 : Sorting grid linked list
 c            3 : Tree algorithm
       integer nnps 
-      parameter(nnps = 1)
+      parameter(nnps = 2)
 
 c     Smoothing length evolution (sle) algorithm
 c     sle = 0 : Keep unchanged,
@@ -69,7 +69,7 @@ c          = 1, Moltine & Clagrossi,2009
 c          = 2, Georgios,2019
 c          = 3, Antuono.etc,2010
       integer filt
-      parameter(filt = 2)
+      parameter(filt = 0)
  
 c     Geometry
 c     geom = 0, no geometry
@@ -126,10 +126,10 @@ c     shifting = .true. : shift algorithm
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .false. )            
-      parameter ( dynamic = .false. )
+      parameter ( nor_density  = .true. )            
+      parameter ( dynamic = .true. )
       parameter ( gate = .false.  )
-      parameter ( mirror = .true. )
+      parameter ( mirror = .false. )
       parameter ( dummy = .false. )
       parameter ( shifting = .false. )
 
@@ -151,7 +151,7 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 39 ) 
+     &            mmp = 80 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
