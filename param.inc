@@ -23,9 +23,9 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  .40e0     ,
+      parameter ( x_maxgeom =  1.28e0     ,
      &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  .40e0     ,
+     &            y_maxgeom =  .64e0     ,
      &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
@@ -38,7 +38,7 @@ c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
 c              2 : (e.g. (p(i)/rho(i)**2+p(j)/rho(j)**2)
 c              3 : (e.g. (p(i)*rho(j)+p(j)*rho(i))/(rho(i)+rho(j))
       integer pa_sph 
-      parameter(pa_sph = 1)
+      parameter(pa_sph = 3)
 
 c     Nearest neighbor particle searching (nnps) method
 c     nnps = 1 : Simplest and direct searching
@@ -77,8 +77,14 @@ c          = 1, triangle wedge
 c          = 2, continous curve, like sin,exp,cubic
 c          = 3, half sphere
       integer geom
-      parameter(geom = 0)
-
+      parameter(geom = 1)
+c   
+c     Initital distribution
+c     indis = 0, standard distribution
+c           = 1, change a little near wedge
+c           = 2, totally diffrent stencil
+      integer indis
+      parameter(indis = 0)
 
 c     Switches for different senarios
 
@@ -126,11 +132,11 @@ c     shifting = .true. : shift algorithm
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .true. )            
-      parameter ( dynamic = .true. )
+      parameter ( nor_density  = .false. )            
+      parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
       parameter ( mirror = .false. )
-      parameter ( dummy = .false. )
+      parameter ( dummy = .true. )
       parameter ( shifting = .false. )
 
 c     Symmetry of the problem
@@ -151,7 +157,7 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 80 ) 
+     &            mmp = 32 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
@@ -165,5 +171,5 @@ c    Switch for different benchmarks
       logical dambreak, static, geometry
       parameter ( dambreak = .false.)
       parameter ( static = .true.)
-      parameter ( geometry = .false.)
+      parameter ( geometry = .true.)
 

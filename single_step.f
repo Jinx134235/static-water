@@ -150,7 +150,7 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
       else 
          do i = 1,ntotal
             rho(i)=rho(i)+dt*drho(i)
-c           if (i.eq.7555.or.i.eq.7556)  print *,drho(i)
+          if (i.eq.75)  print *,drho(i)
             call p_art_water(rho(i),x(2,i),c(i),p(i))
          enddo   
       endif
@@ -328,7 +328,7 @@ c      if(abs(dvx(2,int(ntotal/2))).le.1e-6) print *,itimestep
          enddo
 
        endif
-c      print *,p(7555),p(7556),wi(7555),wi(7556)
+      print *,p(75),wi(75)
 
 c     keep the gate moving to a certain height
        if(gate.and.itimestep.le.2000)then
@@ -358,8 +358,8 @@ c       open(30,file="../data/trace_p.dat")
       endif 
      
       if (mod(itimestep,print_step).eq.0) then      
-          write(*,*) '**** particle moving fastest ****', maxi, maxvel         
-          write(*,*) dvx(2,int(ntotal/2))
+c          write(*,*) '**** particle moving fastest ****', maxi, maxvel         
+c          write(*,*) dvx(2,int(ntotal/2))
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
           write(*,*) '**** average velocity:', real(sumvel/ntotal)

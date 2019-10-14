@@ -40,11 +40,12 @@ c      dt = 8.e-5
       write(*,*)'          Please input the maximal time steps        '
       write(*,*)'  ***************************************************'
       read(*,*) maxtimestep      
-c      
+      call time_print  
       call time_integration(x, vx, mass, rho, p, u, c, s, e, itype, 
      &     hsml, ntotal, maxtimestep, dt, current_ts )
       call output(x, vx, mass, rho, p, u, c, itype, hsml, ntotal)      
       call time_print
+c   actual computing timie      
       write(*,*)'  ***************************************************' 
       write(*,*)'          Run more time steps?(1=yes, 0=no)        '
       write(*,*)'  ***************************************************'

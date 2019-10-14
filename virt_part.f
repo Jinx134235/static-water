@@ -64,9 +64,9 @@ c   in this case, the computing domain is defaultly set as square
 c      if(geometry) then
        a = tan(pi/3)
 c       print *,a
-       mp = 64 
-       np = 32
-       nnp = 80
+       mp = 32 
+       np = 16
+       nnp = 5
        qp = int(nnp/a)+1
        if(.not.geometry) qp = 0     
 c        np = mmp
