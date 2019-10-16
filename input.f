@@ -55,7 +55,7 @@ c     load initial particle information from external disk file
       if(geometry) call two_phase(x, vx, mass, rho, p, u,
      &                      itype, hsml, ntotal)
       
-        do i = 1, ntotal 
+      do i = 1, ntotal 
           write(11,1001) i, (x(d, i),d = 1, dim), (vx(d, i),d = 1, dim) 
           write(22,1002) i, mass(i), rho(i), p(i), u(i)         
           write(33,1003) i, itype(i), hsml(i)    
@@ -254,11 +254,11 @@ c   a: slope of the line(obstacle)
       double precision x(dim, maxn), vx(dim, maxn), mass(maxn),
      &     rho(maxn), p(maxn), u(maxn), hsml(maxn)
       integer i, j, d, m, n, mp, np,qp,hp,k
-      double precision xl, yl, dx, dy, theta, a, y1, y2
+      double precision xl, yl, dx, dy, theta, a, y1, y2, y3, dis,x1
 
 
-      m = 32
-      n = 15
+      m = 35
+      n = 60
       theta = pi/3
       a = tan((pi-theta)/2)
 
@@ -266,7 +266,7 @@ c   a: slope of the line(obstacle)
       dx = xl/mmp
 c      dy = (y_maxgeom-y_mingeom)/n
       
-      mp = 10
+      mp = 40
       np = int(n/a)
       qp = int((n-mp)/a)
 c      hp = 20
@@ -301,42 +301,97 @@ c  geometry 2
       if(indis.eq.0) then
         do i = 1,m
           do j = 1,n
-          y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
-          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
-          if(j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2)then
+c         y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
+c          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
+c          if(j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2)then
             ntotal = ntotal + 1
             x(1,ntotal) = x_mingeom + i*dx-dx/2
             x(2,ntotal) = y_mingeom + j*dx-dx/2
-          endif
+c          endif
          enddo
         enddo
+
+c   adjust the y-coordinate a little for those near to wedge
+c   to make the paricles distribute more evenly while not adding or
+c   removing any particle, this may be useful in minor grid     
+c       do i = 1,ntotal
+c          if (x(1,i).lt.xl/2)then
+c             dis = abs((a*x(1,i)-x(2,i)+(n-mp)*dx-a*xl/2))/sqrt(a**2+1)
+c             if(dis.lt.dx/2.and.x(2,i)+dx-dis*2.le.x(2,i+1)-dx/2)then
+c               x(2,i) = x(2,i)+dx-dis*2
+c             endif
+c          else
+c            dis = abs((-a*x(1,i)-x(2,i)+(n-mp)*dx+a*xl/2))/sqrt(a**2+1)
+c             if(dis.lt.dx/2.and.x(2,i)+dx-dis*2.le.x(2,i+1)-dx/2) then
+c               x(2,i) = x(2,i)+dx-dis*2
+c             endif
+c          endif
+c       enddo
       else if(indis.eq.1) then     
 c   distribution 2:
        do i = 1,m
-        do j = 1,n 
-          y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
-          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2 
-         if (j*dx-dx/2.gt.y1+5.5*dx.or.j*dx-dx/2.gt.y2+5.5*dx.or.
-     &     j*dx-dx/2.gt.(n-mp)*dx) then
+        do j = 1,mp 
+c          y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
+c          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
+c          y3 = sqrt(((a+.5)*dx)**2-(i*dx-dx/2-xl/2)**2)+(n-mp+1)*dx 
+c         if (j*dx-dx/2.gt.y1+5.5*dx.or.j*dx-dx/2.gt.y2+5.5*dx.or.
+c          if( j*dx-(a-1)*dx.gt.(n-mp)*dx) then
           ntotal = ntotal + 1
           x(1,ntotal) = x_mingeom + i*dx-dx/2
-          x(2,ntotal) = y_mingeom + j*dx-dx/2
-         endif 
+          x(2,ntotal) = y_mingeom + (j-1)*dx+(n-mp)*dx+dx/2
+c         endif 
         enddo
        enddo
-c   distribute particles along wall via coordinate shift 
-       do j = 1,2*qp+1
-        do i =1,3
-            ntotal = ntotal+2
-             x(1,ntotal-1) = cos(theta)*((j-1)*dx+dx/4-(i-1)*dx/a)-
-     &    sin(theta)*((i-1)*dx+a*dx/4)+xl/2-(n-mp)*dx/a 
-             x(1,ntotal) = xl-x(1,ntotal-1)
-            x(2,ntotal-1) = cos(theta)*((i-1)*dx+a*dx/4)+sin(theta)*
-     &    ((j-1)*dx+dx/4-(i-1)*dx/a)
-            x(2,ntotal) = x(2,ntotal-1)
+c   distribute particles along wall via transformation of coordinates 
+c       do j = 1,2*qp+2
+c        do i =1,m/2-qp+1
+c            x1 = cos(theta)*((j-1)*dx+dx/4-(i-1)*dx/a)-
+c     &    sin(theta)*((i-1)*dx+a*dx/4)+xl/2-(n-mp)*dx/a
+c            y1 = cos(theta)*((i-1)*dx+a*dx/4)+sin(theta)*
+c     &    ((j-1)*dx+dx/4-(i-1)*dx/a)
+c            if (x1.gt.x_mingeom) then  
+c            ntotal = ntotal+ 2
+c            x(1,ntotal-1) = x1
+c             x(1,ntotal) = xl-x1
+c            x(2,ntotal-1) = y1
+c            x(2,ntotal) = x(2,ntotal-1)
+c           endif
+c        enddo
+c       enddo
+        do i = 1,n-mp
+          do j = 1,m/2
+            y1 = (i-1)*dx+dx/2
+            x1 = (y1-(n-mp)*dx+a*xl/2)/a-(j-1)*dx-dx/2
+            if(x1.gt.x_mingeom) then
+               ntotal = ntotal +2 
+               x(1,ntotal-1) = x1
+               x(2,ntotal-1) = y1
+               x(1,ntotal) = xl-x1
+               x(2,ntotal) = y1
+             endif
+          enddo
         enddo
-       enddo
-        
+
+c    some particle around the corner(coordinates change)            
+    
+c          hp = int(pi*(a+1)/2)
+c          print *,3./4
+c          do j =1,hp-1
+c           ntotal = ntotal +1
+c           print *,real(j)/hp
+c   !!! caution: j is an int, when it is devided by a bigger int,
+c   convert it into real type first           
+c            x(1,ntotal) = xl/2+(a+1)*dx/2*cos((real(j)/hp)*pi)
+c            x(2,ntotal) = (n-mp)*dx+(a+1)*dx/2*sin((real(j)/hp)*pi)
+c          enddo
+c          hp = int(pi*(a+1./2)) 
+c          print *,hp
+c          do j =1,hp-1
+c           ntotal = ntotal +1
+c            x(1,ntotal) = xl/2+(2*a+1)*dx/2*cos((real(j)/hp)*pi)
+c            x(2,ntotal) = (n-mp)*dx+(2*a+1)*dx/2*sin((real(j)/hp)*pi)
+c          enddo
+
       else if(indis.eq.2) then
        do i = 1,m
         do j = 1,np
@@ -346,16 +401,16 @@ c   distribution 3:another set of grid
 c    . . . .
 c     . . .
 c    . . . .
-          if (a*(j-1/2)*dx.gt.y1.or.a*(j-1/2)*dx.gt.y2) then
+          if (a*(j-.5)*dx.gt.y1.or.a*(j-.5)*dx.gt.y2) then
             ntotal = ntotal + 1
              x(1,ntotal) = x_mingeom+i*dx-dx/2
-             x(2,ntotal) = y_mingeom+a*(j-0.5)*dx
+             x(2,ntotal) = y_mingeom+a*(j-1)*dx+a*dx/2
           endif
          enddo
        enddo
 
        do i = 1,m+1
-        do j = 1,np
+        do j = 1,np+1
           y1 = a*(i-1)*dx+(n-mp)*dx-a*xl/2
            y2 = -a*(i-1)*dx+(n-mp)*dx+a*xl/2
           if (a*(j-1)*dx.gt.y1.or.a*(j-1)*dx.gt.y2) then

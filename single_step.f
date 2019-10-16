@@ -150,7 +150,7 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
       else 
          do i = 1,ntotal
             rho(i)=rho(i)+dt*drho(i)
-          if (i.eq.75)  print *,drho(i)
+c          if (i.eq.75)  print *,drho(i)
             call p_art_water(rho(i),x(2,i),c(i),p(i))
          enddo   
       endif
@@ -218,8 +218,8 @@ c---  Artificial viscosity:(4.66)
    
       
 c---  External forces:(4.93)
-         if (ex_force) call ext_force(ntotalvirt,mass,x,vx,niac,
-     &                  pair_i,pair_j,itype, hsml,maxvel, exdvxdt)
+         if (ex_force) call ext_force(ntotal,nvirt,nwall,mass,x,vx,
+     &                  itype, hsml,maxvel, exdvxdt)
 
 c     Calculating the neighboring particles and undating HSML (4.80)/(4.81)
       
@@ -280,24 +280,25 @@ c      maxvel = 0.e0
 c      minvel = 1.e1
 c      sumvel = 0.e0
       do i=1,ntotal
-c        if(i.eq.1)   print *,exdvxdt(dim,i)
+c   except those fixed particles or out of the domain     
+       if(itype(i).ne.0) then
         do d=1,dim
 c          dvx(1,i)=0
           dvx(d,i) = indvxdt(d,i) + exdvxdt(d,i) + ardvxdt(d,i)          
         enddo
 c     gravity, damping technique(Adami,2012)
         if (self_gravity) then
-           if(itimestep*dt.le.damp_t)then
-               cita = 0.5*(sin((-0.5+itimestep*dt/damp_t)*pi)+1)
+c           if(itimestep*dt.le.damp_t)then
+c               cita = 0.5*(sin((-0.5+itimestep*dt/damp_t)*pi)+1)
 c                cita = (itimestep*dt/damp_t)**3
 c                dvx(dim,i) = dvx(dim,i)-9.8*cita
 c            else if(itimestep*dt.gt.damp_t/2.and.
 c     & itimestep*dt.le.damp_t)then
 c                cita = 4*(itimestep*dt/damp_t-1)**3+1
 c                dvx(dim,i) = dvx(dim,i)-9.8*cita
-            else
+c            else
                dvx(dim,i) = dvx(dim,i)-9.8
-            endif
+c            endif
          endif
 c         if(abs(dvx(2,int(ntotal/2))).le.1e-7) print *,itimestep
           du(i) = du(i) + avdudt(i) + ahdudt(i)
@@ -305,10 +306,10 @@ c         if(abs(dvx(2,int(ntotal/2))).le.1e-7) print *,itimestep
         if(u(i).lt.0)  u(i) = 0.         
         do d = 1, dim                   
           vx(d, i) = vx(d, i) + dt * dvx(d, i) + av(d, i)
-c          if(dvx(2,).7556) print *,dvx(d,i),av(d,i)
+c          if(i.eq.75.and.d.eq.dim) print *,dvx(d,i),av(d,i)
           x(d, i) = x(d, i) + dt * vx(d, i)       
         enddo
-      
+       endif
       enddo
 c      if(abs(dvx(2,int(ntotal/2))).le.1e-6) print *,itimestep
       if (shifting) then
@@ -328,7 +329,7 @@ c      if(abs(dvx(2,int(ntotal/2))).le.1e-6) print *,itimestep
          enddo
 
        endif
-      print *,p(75),wi(75)
+c      print *,p(75),wi(75)
 
 c     keep the gate moving to a certain height
        if(gate.and.itimestep.le.2000)then

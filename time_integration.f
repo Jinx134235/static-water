@@ -35,11 +35,14 @@ c      dt-- timestep                                             [input]
      &       drho(maxn),  av(dim, maxn), ds(maxn),
      &       t(maxn), tdsdt(maxn), temp_u, temp_rho, sumvel 
       double precision  time
+      real :: bound(2,2)
       real, allocatable :: p_record(:),v_record(:,:)
       allocate(p_record(200))
       allocate(v_record(2,200))
 c      common nvirt
-               
+      
+      bound(1,:) = (/x_mingeom,x_maxgeom/)
+      bound(2,:) = (/y_mingeom,y_maxgeom/)     
       do i = 1, ntotal
         do d = 1, dim
           av(d, i) = 0.
@@ -67,8 +70,17 @@ c      print *,'before single step:', p(ntotal+1)
      &        x, vx,u, s, rho, p, t, tdsdt, du, ds,c, itype, av, niac,
      &        pair_i, pair_j, sumvel)  
      
-c       print *,'after single step:' ,p(ntotal+1)
-                  
+c      deal with those particles out of domain
+        do i =1,ntotal
+          do d  =1,dim
+           if(x(d,i).gt.bound(d,2).or.x(d,i).lt.bound(d,1)) then
+             itype(i) = 0
+             mass(i) = 0
+           endif
+          enddo
+        enddo
+
+
         if (mod(itimestep,print_step).eq.0) then
 c              p_record(1) = itimestep
              i = itimestep/print_step 

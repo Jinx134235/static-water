@@ -1,4 +1,4 @@
-      subroutine ext_force(ntotal,mass,x,vx,niac,pair_i,pair_j,
+      subroutine ext_force(ntotal,nvirt,nwall,mass,x,vx,
      &       itype,hsml,maxvel,dvxdt)
 
 c--------------------------------------------------------------------------
@@ -20,7 +20,7 @@ c     dvxdt   : Acceleration with respect to x, y and z            [out]
       implicit none
       include 'param.inc'
       
-      integer ntotal, itype(maxn), niac,
+      integer ntotal, itype(maxn), niac,nvirt,nwall,
      &        pair_i(max_interaction), pair_j(max_interaction)
       double precision mass(maxn), x(dim,maxn), hsml(maxn),          
      &       dvxdt(dim,maxn),vx(dim,maxn),maxvel
@@ -34,21 +34,23 @@ c     dvxdt   : Acceleration with respect to x, y and z            [out]
       enddo
         
 c     Boundary particle force and penalty anti-penetration force. 
-      rr0 = 2.e-2
-      dd = maxvel**2
+      rr0 = 5.e-3
+      dd = c0**2
 c      print *,dd
       p1 = 12
       p2 = 4
       
-      do  k=1,niac
-        i = pair_i(k)
-        j = pair_j(k)  
-        if(itype(i).gt.0.and.itype(j).eq.0) then  
-          rr = 0.      
-        
+c      do  k=1,niac
+c        i = pair_i(k)
+c        j = pair_j(k)
+c     only for the wall particles
+      do i = 1,ntotal
+        do j = ntotal+nvirt+1,ntotal+nvirt+nwall     
+c        if(itype(ntotal+j).eq.0) then  
+          rr = 0.              
           do d=1,dim
             dx(d) =  x(d,i) -  x(d,j)
-c           dd(d) = vx(d,i) - vx(d,j)
+c           rd(d) = vx(d,i) - vx(d,j)
             rr = rr + dx(d)*dx(d)
           enddo  
           rr = sqrt(rr)
@@ -58,7 +60,8 @@ c           dd(d) = vx(d,i) - vx(d,j)
               dvxdt(d, i) = dvxdt(d, i) + dd*dx(d)*f
             enddo
           endif
-        endif        
+c        endif 
+        enddo       
       enddo   
        
       end         

@@ -81,7 +81,7 @@ c          = 3, half sphere
 c   
 c     Initital distribution
 c     indis = 0, standard distribution
-c           = 1, change a little near wedge
+c           = 1, distribute according to wedge
 c           = 2, totally diffrent stencil
       integer indis
       parameter(indis = 0)
@@ -157,14 +157,14 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 32 ) 
+     &            mmp = 128 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
 c    damp_t: damping time in damping technique     
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 2.93249e1,   
+     &            c0 = 2.424871e1,   
      &            damp_t = 0.2 )
 
 c    Switch for different benchmarks

@@ -23,8 +23,8 @@ c     ogn     : number of over generation                        [out]
 
       integer itimestep, ntotal, itype(maxn), nvirt, mother(maxn)
       double precision hsml(maxn),mass(maxn),x(dim,maxn),vx(dim,maxn),
-     &                 rho(maxn), u(maxn), p(maxn),slope(maxn)
-      integer i, j, d, im,mp,np, qp,scale_k, nnp, nwall, flag,ocn(maxn)
+     &                 rho(maxn), u(maxn), p(maxn),slope(maxn),nnp
+      integer i, j, d, im,mp,np, qp,scale_k, nwall, flag,ocn(maxn)
       double precision xl, dx, v_gate, tiny, b, a, y1, y2, dps,period
 c      common nvirt
       real corner(2,5)
@@ -64,10 +64,11 @@ c   in this case, the computing domain is defaultly set as square
 c      if(geometry) then
        a = tan(pi/3)
 c       print *,a
-       mp = 32 
-       np = 16
-       nnp = 5
-       qp = int(nnp/a)+1
+       mp = 128 
+       np = 64
+       nnp = 2.e1
+       qp = int(nnp/a+1)
+       if (indis.eq.2) nnp = qp*a
        if(.not.geometry) qp = 0     
 c        np = mmp
 c      endif
@@ -81,11 +82,10 @@ c  speed of the gate(dambreak)/ speed of the top(cavityflow)
       v_gate = 1.5
 c      h = hsml(1)
 c   coordinates of the corners
-      corner(1,1:4)=(/x_mingeom,x_maxgeom,xl/2-qp*dx,xl/2+qp*dx/)
-      corner(:,5)=(/xl/2,a*qp*dx/)
+      corner(1,1:4)=(/x_mingeom,x_maxgeom,xl/2-nnp*dx/a,xl/2+nnp*dx/a/)
+      corner(:,5)=(/xl/2,nnp*dx/)
 c      corner(:,2)=(/xl/2-nnp*dx/a,y_mingeom/)
 c      print *,corner
-      if(.not.dynamic.and..not.dummy) then
 c     repulsive boundary   --fixed solid particle
 c     Monaghan type virtual particle on the Upper side
       
@@ -96,16 +96,7 @@ c          x(2, ntotal + nvirt) = xl
 c          vx(1, ntotal + nvirt) = 0.
 c	  vx(2, ntotal + nvirt) = 0.
 c        enddo
-       if(geom.eq.1.and.ex_force) then   
-c     Monaghan type virtual particle on the Lower side
-
-        do i = 1, 2*mp+1
-          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
-     &   nnp*dx/a)then
-         nvirt = nvirt + 1
-           x(1, ntotal + nvirt) = x_mingeom+(i-1)*dx/2
-           x(2, ntotal + nvirt) = y_mingeom
-c          endif
+c         endif
 c        enddo
 c        do i = 1,2*mp+1
 c         if((i-1)*dx/2.gt.xl/2-nnp*dx/a.and.(i-1)*dx/2.lt.xl/2+
@@ -134,46 +125,8 @@ c           nvirt = nvirt + 1
 c           x(1, ntotal + nvirt) = x_mingeom+(i-1)*dx/2
 c           x(2, ntotal + nvirt) = y_mingeom
 
-         endif
-        enddo
-
-c     Monaghan type virtual particle on the Left side
-
-        do i = 1, np*2
-   	  nvirt = nvirt + 1
- 	  x(1, ntotal + nvirt) = x_mingeom 
-         x(2, ntotal + nvirt) = y_mingeom+i*dx/2
-        enddo
-
-c     Monaghan type virtual particle on the Right side
-
-       do i = 1, np*2
-    	  nvirt = nvirt + 1
-	  x(1, ntotal + nvirt) = x_maxgeom 
-          x(2, ntotal + nvirt) = y_mingeom+i*dx/2  
-       enddo
-c    Monaghan type virtual particle as obsatacle 
-       do i = 1, qp*2
-          nvirt = nvirt + 2
-          x(1,ntotal+nvirt-1) = x_mingeom+(np-qp)*dx+i*dx/2
-          x(1,ntotal+nvirt) = xl-x(1,ntotal+nvirt-1)
-          x(2,ntotal+nvirt-1) = y_mingeom+a*i*dx/2
-          x(2,ntotal+nvirt) = x(2,ntotal+nvirt-1)
-       enddo
-
-        nwall = nvirt
-	do i = 1, nvirt
-         vx(1, ntotal + i) = 0.
-	  vx(2, ntotal + i) = 0.
-	  if(itimestep.eq.1)rho (ntotal + i) = 1000.
-	   mass(ntotal + i) = rho(ntotal+i)*dx*dx
-          if(itimestep.eq.1) p(ntotal + i) = 0. 
-	   u(ntotal + i) = 357.1
-	   itype(ntotal + i) = 0
-	    hsml(ntotal + i) = 1.3*dx
-        enddo
-       endif
-      endif
+c         endif
+c        enddo
 
       if(dynamic.or.dummy)then
 c--- staggered grid on the boundary, left-down-right
@@ -217,15 +170,15 @@ c    downside  except the wedge
         if ((x(2,i).gt.y_mingeom).and.
      &    (x(2,i).lt.y_mingeom+scale_k*hsml(i)))then
 
-c          if ((x(2,i).lt.a*x(1,i)-a*xl/2-a*qp*dx).or.
-c     &    (x(2,i).lt.-a*x(1,i)+a*xl/2-a*qp*dx))  then
+          if ((x(2,i).le.a*x(1,i)-a*corner(1,4)).or.
+     &    (x(2,i).le.-a*x(1,i)+a*corner(1,3)))  then
            nvirt=nvirt+1
            x(1, ntotal + nvirt) = x(1,i)
            x(2, ntotal + nvirt) = 2*y_mingeom-x(2,i)
            vx(1, ntotal + nvirt) = vx(1,i)
            vx(2, ntotal + nvirt) = -vx(2,i)
            mother(ntotal + nvirt)=i
-c           endif
+          endif
        endif
 c   leftside
           if ((x(1,i).gt.x_mingeom).and.
@@ -237,9 +190,10 @@ c   leftside
            vx(2, ntotal + nvirt) = vx(2,i)
            mother(ntotal + nvirt) = i
            endif
+c   two bottom corners           
         do j = 1,2
            dps = sqrt((x(1,i)-corner(1,j))**2+(x(2,i)-corner(2,j))**2)
-           if(dps.lt.scale_k*hsml(i).and.dps.gt.1e-9)then
+           if(dps.le.scale_k*hsml(i).and.dps.gt.1e-9)then
                nvirt = nvirt+1
                do d =1,dim
                  x(d,ntotal+nvirt)=2*corner(d,j)-x(d,i)
@@ -247,14 +201,14 @@ c   leftside
                  enddo
                 mother(ntotal+nvirt)=i
             endif
-           enddo
+          enddo
       enddo
 
         if(geom.ne.0)then
           call geom_generate(itimestep,scale_k,corner,itype, hsml,slope,
-     &   qp,ntotal,nvirt,nwall,x,vx,mother,ocn)
+     &   nnp,ntotal,nvirt,nwall,x,vx,mother,ocn)
         endif
-       do i=ntotal+nwall+1,ntotal+nvirt
+       do i=ntotal+1,ntotal+nvirt
             itype(i) = -2
             hsml(i)= 1.3*dx
             p(i)=p(mother(i))
@@ -263,8 +217,8 @@ c   leftside
            mass(i)=mass(mother(i))/ocn(mother(i))
           if(geom.eq.1)then
            dps = sqrt((x(1,i)-corner(1,5))**2+(x(2,i)-corner(2,5))**2) 
-            if (x(2,i).gt.a*x(1,i)-a*xl/2+a*qp*dx-4*hsml(i).and.
-     &         x(2,i).gt.-a*x(1,i)+a*xl/2+a*qp*dx-4*hsml(i))then
+            if (x(2,i).gt.a*x(1,i)-a*corner(1,3)-4*hsml(i).and.
+     &         x(2,i).gt.-a*x(1,i)+a*corner(1,4)-4*hsml(i))then
                mass(i)=mass(mother(i))/2
               if (dps.lt.scale_k*hsml(i))then
                  mass(i) = mass(mother(i))/3
@@ -275,7 +229,53 @@ c   leftside
        endif
       endif   
 
+      if(geom.eq.1.and.ex_force) then
+c     Monaghan type virtual particle on the Lower side
+
+        do i = 1, 2*mp+1
+          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
+     &   nnp*dx/a)then
+           nwall = nwall + 1
+           x(1, ntotal + nvirt + nwall) = x_mingeom+(i-1)*dx/2
+           x(2, ntotal + nvirt + nwall) = y_mingeom
+         endif
+       enddo
 c      if(itimestep.eq.1) then
+        do i = 1, np*2
+          nwall = nwall + 1
+          x(1, ntotal + nvirt+nwall) = x_mingeom
+         x(2, ntotal + nvirt+nwall) = y_mingeom+i*dx/2
+        enddo
+
+c     Monaghan type virtual particle on the Right side
+       do i = 1, np*2
+          nwall = nwall + 1
+          x(1, ntotal + nvirt+nwall) = x_maxgeom
+          x(2, ntotal + nvirt+nwall) = y_mingeom+i*dx/2
+       enddo
+c    Monaghan type virtual particle as obsatacle
+c    symmetric to centerline       
+       do i = 1, qp*4
+          nwall = nwall + 2
+          x(1,ntotal+nvirt+nwall-1) = x_mingeom+(np-qp)*dx+i*dx/4
+          x(1,ntotal+nvirt+nwall) = xl-x(1,ntotal+nvirt+nwall-1)
+          x(2,ntotal+nvirt+nwall-1) = y_mingeom+a*i*dx/4
+          x(2,ntotal+nvirt+nwall) = x(2,ntotal+nvirt+nwall-1)
+       enddo
+
+c        nwall = nvirt
+        do i = ntotal+nvirt+1,ntotal+nvirt+nwall
+           vx(1, i) = 0.
+          vx(2, i) = 0.
+          if(itimestep.eq.1)rho (i) = 1000.
+           mass(ntotal + i) = rho(i)*dx*dx
+          if(itimestep.eq.1) p(i) = 0.
+           u(i) = 357.1
+c      special type for wall particle           
+           itype(i) = 0
+            hsml(i) = 1.3*dx
+         enddo
+       endif
 
       if (mod(itimestep,print_step).eq.0) then
         if (int_stat) then

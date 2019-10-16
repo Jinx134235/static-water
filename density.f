@@ -171,8 +171,8 @@ c        if (pair_i(k).eq.1) print *, pair_j(k)
     
       do i = 1,ntotal
          write (10,1001) i,wi(i)
-       enddo
- 1001     format(2x, I6, 2x, e14.8)
+      enddo
+1001  format(2x, I6, 2x, e14.8)
       close(10)
 
 c     Secondly calculate the rho integration over the space
@@ -220,7 +220,7 @@ c   georgios
 c           if(k.le.10)print *,rhoh  
            do d=1,dim
             psi(d) = -2*(rho(j)-rho(i)-rhoh)*dx(d)/sqrt(r)
-          enddo
+           enddo
 c          if(k.eq.1) print*,psi
            xcc = psi(1)*dwdx(1,k)
            do d=2,dim
