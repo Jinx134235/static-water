@@ -47,14 +47,16 @@ c     load initial particle information from external disk file
        open(22,file="../data/ini_state.dat")
        open(33,file="../data/ini_other.dat") 
        
-      
+c select cases --updating..      
       if(dambreak) call dam_break(x, vx, mass, rho, p, u, 
      &                      itype, hsml, ntotal)
-      if(static.and..not.geometry) call static_water(x, vx, mass, rho,
+      if(static) call static_water(x, vx, mass, rho,
      &                     p,u, itype, hsml, ntotal)
       if(geometry) call two_phase(x, vx, mass, rho, p, u,
      &                      itype, hsml, ntotal)
-      
+      if(waterdrop) call water_fall(x,vx, mass,rho, p, u,
+     &                      itype, hsml ,ntotal)
+c  dump data      
       do i = 1, ntotal 
           write(11,1001) i, (x(d, i),d = 1, dim), (vx(d, i),d = 1, dim) 
           write(22,1002) i, mass(i), rho(i), p(i), u(i)         
@@ -256,8 +258,8 @@ c   a: slope of the line(obstacle)
       integer i, j, d, m, n, mp, np,qp,hp,k
       double precision xl, yl, dx, dy, theta, a, y1, y2, y3, dis,x1
 
-
-      m = 35
+c   m--column n--row
+      m = 128
       n = 60
       theta = pi/3
       a = tan((pi-theta)/2)
@@ -298,18 +300,28 @@ c           enddo
 c       enddo
 
 c  geometry 2
+
+c  dambreak simulation
       if(indis.eq.0) then
         do i = 1,m
           do j = 1,n
-c         y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
-c          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
-c          if(j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2)then
+         y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
+          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
+          if(j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2)then
             ntotal = ntotal + 1
             x(1,ntotal) = x_mingeom + i*dx-dx/2
             x(2,ntotal) = y_mingeom + j*dx-dx/2
-c          endif
+           endif 
          enddo
         enddo
+c  two columns of water   
+c        do i = 1,m
+c          do j =1,n
+c         ntotal = ntotal + 1
+c            x(1,ntotal) = x_maxgeom - i*dx+dx/2
+c            x(2,ntotal) = y_mingeom + j*dx-dx/2
+c         enddo
+c        enddo
 
 c   adjust the y-coordinate a little for those near to wedge
 c   to make the paricles distribute more evenly while not adding or
@@ -401,22 +413,22 @@ c   distribution 3:another set of grid
 c    . . . .
 c     . . .
 c    . . . .
-          if (a*(j-.5)*dx.gt.y1.or.a*(j-.5)*dx.gt.y2) then
+          if (a*(j-.5)*dx+dx/2.gt.y1.or.a*(j-.5)*dx+dx/2.gt.y2) then
             ntotal = ntotal + 1
              x(1,ntotal) = x_mingeom+i*dx-dx/2
-             x(2,ntotal) = y_mingeom+a*(j-1)*dx+a*dx/2
+             x(2,ntotal) = y_mingeom+a*(j-1)*dx+(a+1)*dx/2
           endif
          enddo
        enddo
 
-       do i = 1,m+1
+       do i = 1,m-1
         do j = 1,np+1
-          y1 = a*(i-1)*dx+(n-mp)*dx-a*xl/2
-           y2 = -a*(i-1)*dx+(n-mp)*dx+a*xl/2
-          if (a*(j-1)*dx.gt.y1.or.a*(j-1)*dx.gt.y2) then
+          y1 = a*i*dx+(n-mp)*dx-a*xl/2
+           y2 = -a*i*dx+(n-mp)*dx+a*xl/2
+          if (a*(j-1)*dx+dx/2.gt.y1.or.a*(j-1)*dx+dx/2.gt.y2) then
              ntotal = ntotal + 1
-             x(1,ntotal) = x_mingeom+(i-1)*dx
-             x(2,ntotal) = y_mingeom+a*(j-1)*dx
+             x(1,ntotal) = x_mingeom+i*dx
+             x(2,ntotal) = y_mingeom+a*(j-1)*dx+dx/2
           endif
          enddo
         enddo
@@ -445,4 +457,59 @@ c        endif
       end
 
 
+      subroutine water_fall(x, vx, mass, rho, p, u,
+     &           itype, hsml, ntotal)
+c---------------------------------------------------------------
+c   input for waterdrop case
+c   two cases are included:I) free fall on the sharp corner; 
+c                          II) crash in the concave corner 
 
+
+      implicit none
+      include 'param.inc'
+
+      integer itype(maxn), ntotal
+      double precision x(dim, maxn), vx(dim, maxn), mass(maxn),
+     &     rho(maxn), p(maxn), u(maxn), hsml(maxn)
+      integer i, j, d, np,k
+      double precision xl, yl, dx, dy, x1, x2,hh,dd
+
+c      m = 104
+c      n = 104
+
+c    radius of the waterball
+       np = 10
+       xl = x_maxgeom - y_mingeom
+       dx = xl/mmp
+c    initial height of the waterball
+       hh = 0.3       
+
+       do i = 1,np*2
+         do j = 1,np*2
+           x1 = hh-np*dx+i*dx
+           x2 = hh-np*dx+j*dx
+           dd = (x1-hh)**2+(x2-hh)**2
+           dd =sqrt(dd)
+            if(dd.le.np*dx) then
+              ntotal = ntotal +1
+              x(1,ntotal) = x1
+              x(2,ntotal) = x2
+             endif
+         enddo
+       enddo
+
+      do i = 1, ntotal
+        vx(1, i) = 1.
+        vx(2, i) = -1.
+c--- original density,pressure & mass of the particles    
+c--- either zero pressure or hydrostatic works
+        p(i) = 0
+c        p(i) = 9.8*1000*(yl-x(2,i))
+        rho(i) = 1000
+        mass(i) = dx*dx*rho(i)
+        u(i)=357.1
+        itype(i) = 2
+        hsml(i) = 1.3*dx
+      enddo
+
+      end

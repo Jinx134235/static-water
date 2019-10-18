@@ -68,6 +68,7 @@ c     Position particles on grid and create linked list:
      &    gcell, itimestep)
         do d=1,dim
           xgcell(d,i) = gcell(d)
+c          if(d.eq.dim) print *, i, gcell(d)
         enddo
 
         celldata(i) = grid(gcell(1),gcell(2),gcell(3))

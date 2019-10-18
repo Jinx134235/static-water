@@ -200,7 +200,6 @@ c        else
       do k=1,niac
            i = pair_i(k)
            j = pair_j(k)
-c          print *,i,j
            he = 0.e0
          if(pa_sph.eq.1)then
           do d=1,dim                
@@ -287,7 +286,7 @@ c     Change of specific internal energy de/dt = T ds/dt - p/rho vc,c:
       do i=1,ntotal
 c         grap(i) = dvxdt(dim,i)*rho(i)
          dedt(i) = tdsdt(i) + 0.5e0*dedt(i)
-c       print *,i, grap(i)
+c       if(i.eq.40) print *,dvxdt(2,i), dedt(i)
       enddo
 
       end

@@ -1,5 +1,5 @@
-      subroutine ext_force(ntotal,nvirt,nwall,mass,x,vx,
-     &       itype,hsml,maxvel,dvxdt)
+      subroutine ext_force(ntotal,nvirt,nwall,mass,x,vx,niac,
+     &       itype,pair_i,pair_j,hsml,maxvel,dvxdt)
 
 c--------------------------------------------------------------------------
 c     Subroutine to calculate the external forces, e.g. gravitational forces.      
@@ -25,7 +25,7 @@ c     dvxdt   : Acceleration with respect to x, y and z            [out]
       double precision mass(maxn), x(dim,maxn), hsml(maxn),          
      &       dvxdt(dim,maxn),vx(dim,maxn),maxvel
       integer i, j, k, d
-      double precision dx(dim), rr, f, rr0, dd, p1, p2     
+      double precision dx(dim), rr, f, rr0, dd, p1, p2,xl 
            
       do i = 1, ntotal
         do d = 1, dim
@@ -34,19 +34,21 @@ c     dvxdt   : Acceleration with respect to x, y and z            [out]
       enddo
         
 c     Boundary particle force and penalty anti-penetration force. 
-      rr0 = 5.e-3
+      xl = x_maxgeom-x_mingeom
+      
+      rr0 = xl/mmp/2
       dd = c0**2
 c      print *,dd
       p1 = 12
       p2 = 4
       
-c      do  k=1,niac
-c        i = pair_i(k)
-c        j = pair_j(k)
+      do k=1,niac
+        i = pair_i(k)
+        j = pair_j(k)
 c     only for the wall particles
-      do i = 1,ntotal
-        do j = ntotal+nvirt+1,ntotal+nvirt+nwall     
-c        if(itype(ntotal+j).eq.0) then  
+c      do i = 1,ntotal
+c        do j = ntotal+nvirt+1,ntotal+nvirt+nwall     
+        if(itype(j).eq.0) then  
           rr = 0.              
           do d=1,dim
             dx(d) =  x(d,i) -  x(d,j)
@@ -60,8 +62,8 @@ c           rd(d) = vx(d,i) - vx(d,j)
               dvxdt(d, i) = dvxdt(d, i) + dd*dx(d)*f
             enddo
           endif
-c        endif 
-        enddo       
+         endif 
+c        enddo       
       enddo   
        
       end         

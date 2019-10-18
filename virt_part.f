@@ -64,18 +64,17 @@ c   in this case, the computing domain is defaultly set as square
 c      if(geometry) then
        a = tan(pi/3)
 c       print *,a
-       mp = 128 
-       np = 64
-       nnp = 2.e1
-       qp = int(nnp/a+1)
-       if (indis.eq.2) nnp = qp*a
-       if(.not.geometry) qp = 0     
-c        np = mmp
+       mp = mmp 
+       np = mp/2
 c      endif
       
 
 	xl = x_maxgeom-x_mingeom
 	dx = xl/mmp
+c   wedge height        
+       nnp = 0.2/dx
+       qp = int(nnp/a+1)
+       if (indis.eq.2) nnp = qp*a
         period = sqrt(3.)*pi/(2*nnp*dx)
 
 c  speed of the gate(dambreak)/ speed of the top(cavityflow)        
@@ -170,15 +169,15 @@ c    downside  except the wedge
         if ((x(2,i).gt.y_mingeom).and.
      &    (x(2,i).lt.y_mingeom+scale_k*hsml(i)))then
 
-          if ((x(2,i).le.a*x(1,i)-a*corner(1,4)).or.
-     &    (x(2,i).le.-a*x(1,i)+a*corner(1,3)))  then
+c          if ((x(2,i).le.a*x(1,i)-a*corner(1,4)).or.
+c     &    (x(2,i).le.-a*x(1,i)+a*corner(1,3)))  then
            nvirt=nvirt+1
            x(1, ntotal + nvirt) = x(1,i)
            x(2, ntotal + nvirt) = 2*y_mingeom-x(2,i)
            vx(1, ntotal + nvirt) = vx(1,i)
            vx(2, ntotal + nvirt) = -vx(2,i)
            mother(ntotal + nvirt)=i
-          endif
+c          endif
        endif
 c   leftside
           if ((x(1,i).gt.x_mingeom).and.
@@ -229,16 +228,16 @@ c   two bottom corners
        endif
       endif   
 
-      if(geom.eq.1.and.ex_force) then
+      if(ex_force) then
 c     Monaghan type virtual particle on the Lower side
 
         do i = 1, 2*mp+1
-          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
-     &   nnp*dx/a)then
+c          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
+c     &   nnp*dx/a)then
            nwall = nwall + 1
            x(1, ntotal + nvirt + nwall) = x_mingeom+(i-1)*dx/2
            x(2, ntotal + nvirt + nwall) = y_mingeom
-         endif
+c         endif
        enddo
 c      if(itimestep.eq.1) then
         do i = 1, np*2
@@ -262,20 +261,35 @@ c    symmetric to centerline
           x(2,ntotal+nvirt+nwall-1) = y_mingeom+a*i*dx/4
           x(2,ntotal+nvirt+nwall) = x(2,ntotal+nvirt+nwall-1)
        enddo
+c    small baffle at center
+c         do i =1,16
+c            nwall = nwall+1
+c            x(1,ntotal+nvirt+nwall) = x_mingeom+xl/2+(i-1)*dx/2
+c            x(2,ntotal+nvirt+nwall) = y_mingeom+i*dx/2
+c         enddo
+c    baffle
+c       do i = 1,np*2-20
+c         nwall = nwall +1
+c          x(1,ntotal+nvirt+nwall) = x_mingeom+40*dx
+c            x(2,ntotal+nvirt+nwall) = y_maxgeom-(i-1)*dx/2
+c        enddo
+
 
 c        nwall = nvirt
         do i = ntotal+nvirt+1,ntotal+nvirt+nwall
            vx(1, i) = 0.
-          vx(2, i) = 0.
-          if(itimestep.eq.1)rho (i) = 1000.
+           vx(2, i) = 0.
+           rho (i) = 1000.
            mass(ntotal + i) = rho(i)*dx*dx
-          if(itimestep.eq.1) p(i) = 0.
+           p(i) = 0.
            u(i) = 357.1
 c      special type for wall particle           
            itype(i) = 0
-            hsml(i) = 1.3*dx
+           hsml(i) = 1.3*dx
          enddo
        endif
+
+c       print *,nwall
 
       if (mod(itimestep,print_step).eq.0) then
         if (int_stat) then

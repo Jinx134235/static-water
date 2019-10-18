@@ -38,7 +38,7 @@ c     pa_sph = 1 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
 c              2 : (e.g. (p(i)/rho(i)**2+p(j)/rho(j)**2)
 c              3 : (e.g. (p(i)*rho(j)+p(j)*rho(i))/(rho(i)+rho(j))
       integer pa_sph 
-      parameter(pa_sph = 3)
+      parameter(pa_sph = 1)
 
 c     Nearest neighbor particle searching (nnps) method
 c     nnps = 1 : Simplest and direct searching
@@ -123,20 +123,20 @@ c     shifting = .true. : shift algorithm
      &        mirror, gate, dummy, shifting
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .false. )
+      parameter ( average_velocity  = .true. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
       parameter ( visc  = .false. )
-      parameter ( ex_force  = .false.)
-      parameter ( visc_artificial  = .true. )
+      parameter ( ex_force  = .true.)
+      parameter ( visc_artificial  = .false. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
       parameter ( nor_density  = .false. )            
       parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
-      parameter ( mirror = .false. )
-      parameter ( dummy = .true. )
+      parameter ( mirror = .true. )
+      parameter ( dummy = .false. )
       parameter ( shifting = .false. )
 
 c     Symmetry of the problem
@@ -157,19 +157,24 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 128 ) 
+     &            mmp = 256 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
 c    damp_t: damping time in damping technique     
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 2.424871e1,   
-     &            damp_t = 0.2 )
+     &            c0 = 2.42487e1,   
+     &            damp_t = 0 )
 
 c    Switch for different benchmarks
-      logical dambreak, static, geometry
+c    dambreak : this is the test case from Crespo (2008)
+c    static : this simulates both static water&cavity flow in a square tank
+c    geometry : this contains different geometries for still water,
+c               dambreak and floating objects as well
+c    waterdrop : a small waterball fall onto steps or obstacles(Liu)
+      logical dambreak, static, geometry, waterdrop
       parameter ( dambreak = .false.)
-      parameter ( static = .true.)
-      parameter ( geometry = .true.)
-
+      parameter ( static = .false.)
+      parameter ( geometry = .false.)
+      parameter ( waterdrop = .true.)

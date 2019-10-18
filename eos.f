@@ -32,6 +32,6 @@ c      p = rho*9.8*(1.e-3-h)
 c     Artificial EOS, Form 2 (Morris, 1997)
 c     See Equ.(4.89)
 c      c = 0.01
-c      p = c**2 * rho      
+c      p = c**2 * (rho-rho0)      
       
       end 
