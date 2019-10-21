@@ -126,6 +126,7 @@ c      print *,ntotal,nvirt,nwall
       else if (nnps.eq.2) then
         call link_list(itimestep, ntotalvirt, hsml(1),x,niac,pair_i,
      &       pair_j,w,dwdx,ns)
+       
 c---   else if (nnps.eq.3) then 
 c       call tree_search(itimestep, ntotal+nvirt,hsml,x,niac,pair_i,
 c     &       pair_j,w,dwdx,ns)
@@ -278,10 +279,10 @@ c      print *,ardvxdt(2,7555),ardvxdt(2,7556)
        endif
 
       do i=1,ntotal 
-       if(itype(i).ne.0) then
+       if(itype(i).gt.0) then
         do d=1,dim
           dvx(d,i) = indvxdt(d,i) + exdvxdt(d,i) + ardvxdt(d,i)   
-c          if(i.eq.40.and.d.eq.dim) print *,indvxdt(d,i),exdvxdt(d,i)       
+c          if(i.eq.52.and.d.eq.dim) print *,indvxdt(d,i),exdvxdt(d,i)       
         enddo
 c     gravity, damping technique(Adami,2012)
         if (self_gravity) then
@@ -356,16 +357,16 @@ c       open(30,file="../data/trace_p.dat")
         close(60) 
       endif 
      
-c      if (mod(itimestep,print_step).eq.0) then      
-c          write(*,*) '**** particle moving fastest ****', maxi, maxvel         
+      if (mod(itimestep,print_step).eq.0) then      
+          write(*,*) '**** particle moving fastest ****', maxi, maxvel         
 c          write(*,*) dvx(2,int(ntotal/2))
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
-c          write(*,*) '**** average velocity:', real(sumvel/ntotal)
+          write(*,*) '**** average velocity:', real(sumvel/ntotal)
 c           write(*,*) '**** particle moving slowest ****', mini         
 c         write(*,102)'velocity(y)','internal(y)','total(y)'   
 c          write(*,103)  x(1,mini),x(2,mini),vx(1,mini),vx(2,mini) 
-c      endif
+      endif
       
 c100   format(1x,4(2x,e12.6))     
 c101   format(1x,4(2x,e12.6))          

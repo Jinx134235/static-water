@@ -65,7 +65,8 @@ c      if(geometry) then
        a = tan(pi/3)
 c       print *,a
        mp = mmp 
-       np = mp/2
+       np = mp
+
 c      endif
       
 
@@ -247,13 +248,25 @@ c      if(itimestep.eq.1) then
         enddo
 
 c     Monaghan type virtual particle on the Right side
+      if (static)then
        do i = 1, np*2
           nwall = nwall + 1
           x(1, ntotal + nvirt+nwall) = x_maxgeom
           x(2, ntotal + nvirt+nwall) = y_mingeom+i*dx/2
        enddo
+      endif
+c     Monaghan type particle on upper side
+      if(cavity) then
+         do i = 1, np*2 - 1
+          nwall = nwall + 1
+          x(1, ntotal + nvirt+nwall) = x_mingeom+i*dx/2
+          x(2, ntotal + nvirt+nwall) = y_maxgeom
+         enddo
+      endif
+      
 c    Monaghan type virtual particle as obsatacle
-c    symmetric to centerline       
+c    symmetric to centerline 
+      if(geometry)then      
        do i = 1, qp*4
           nwall = nwall + 2
           x(1,ntotal+nvirt+nwall-1) = x_mingeom+(np-qp)*dx+i*dx/4
@@ -261,12 +274,15 @@ c    symmetric to centerline
           x(2,ntotal+nvirt+nwall-1) = y_mingeom+a*i*dx/4
           x(2,ntotal+nvirt+nwall) = x(2,ntotal+nvirt+nwall-1)
        enddo
+      endif
 c    small baffle at center
-c         do i =1,16
-c            nwall = nwall+1
-c            x(1,ntotal+nvirt+nwall) = x_mingeom+xl/2+(i-1)*dx/2
-c            x(2,ntotal+nvirt+nwall) = y_mingeom+i*dx/2
-c         enddo
+      if(dambreak) then
+         do i =1,16
+            nwall = nwall+1
+            x(1,ntotal+nvirt+nwall) = x_mingeom+xl/2+(i-1)*dx/2
+            x(2,ntotal+nvirt+nwall) = y_mingeom+i*dx/2
+         enddo
+      endif
 c    baffle
 c       do i = 1,np*2-20
 c         nwall = nwall +1
@@ -279,12 +295,14 @@ c        nwall = nvirt
         do i = ntotal+nvirt+1,ntotal+nvirt+nwall
            vx(1, i) = 0.
            vx(2, i) = 0.
+c     assign velocity to virtual particles on upside           
+           if (cavity.and.x(2,i).eq.y_maxgeom) vx(1,i) =1.0
            rho (i) = 1000.
-           mass(ntotal + i) = rho(i)*dx*dx
+           mass(i) = rho(i)*dx*dx
            p(i) = 0.
            u(i) = 357.1
 c      special type for wall particle           
-           itype(i) = 0
+           itype(i) = -2
            hsml(i) = 1.3*dx
          enddo
        endif

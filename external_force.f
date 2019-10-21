@@ -34,8 +34,7 @@ c     dvxdt   : Acceleration with respect to x, y and z            [out]
       enddo
         
 c     Boundary particle force and penalty anti-penetration force. 
-      xl = x_maxgeom-x_mingeom
-      
+      xl = x_maxgeom-x_mingeom      
       rr0 = xl/mmp/2
       dd = c0**2
 c      print *,dd
@@ -48,7 +47,7 @@ c      print *,dd
 c     only for the wall particles
 c      do i = 1,ntotal
 c        do j = ntotal+nvirt+1,ntotal+nvirt+nwall     
-        if(itype(j).eq.0) then  
+        if(itype(j).lt.0) then  
           rr = 0.              
           do d=1,dim
             dx(d) =  x(d,i) -  x(d,j)

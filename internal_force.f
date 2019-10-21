@@ -75,9 +75,11 @@ c     Calculate SPH sum for shear tensor Tab = va,b + vb,a - 2/3 delta_ab vc,c
         do k=1,niac
           i = pair_i(k)
           j = pair_j(k)
+          
           do d=1,dim
             dvx(d) = vx(d,j) - vx(d,i)
           enddo
+c          if (i.eq.52) print *,dvx(1),dvx(2), dwdx(1,k),mass(j)
           if (dim.eq.1) then 
             hxx = 2.e0*dvx(1)*dwdx(1,k)        
           else if (dim.eq.2) then           
@@ -134,6 +136,7 @@ c     Calculate SPH sum for vc,c = dvx/dx + dvy/dy + dvz/dz:
         enddo
       endif   
 
+c      print *,txx(52),txy(52),tyy(52)
       do i=1,ntotal
       
 c     Viscous entropy Tds/dt = 1/2 eta/rho Tab Tab
@@ -251,7 +254,10 @@ c     z-coordinate of acceleration
            dvxdt(d,i) = dvxdt(d,i) + mass(j)*h
            dvxdt(d,j) = dvxdt(d,j) - mass(i)*h
           enddo
-       
+c        elseif(pa_sph.eq.2) then
+c         call dividition(rho, dwdx,pair_i, pair_j, eta, mass,p, vx,
+c     &    txx, txy, tyz, tyy, txz, tzz,dvxdt, dedt)
+
         elseif(pa_sph.eq.3) then
           mp = (rho(i)*p(j)+rho(j)*p(i))/(rho(i)+rho(j))
           meta = 2*eta(i)*eta(j)/(eta(i)+eta(j))
@@ -280,7 +286,12 @@ c    Energy equation
           dedt(i) = dedt(i) + mass(j)*he
           dedt(j) = dedt(j) + mass(i)*he
       enddo  
-    
+
+       if(pa_sph.eq.2) then
+         call dividition(rho, dwdx,pair_i, pair_j, eta, mass,p, vx,
+     &    txx, txy, tyz, tyy, txz, tzz,dvxdt, dedt) 
+       endif
+
 c     Change of specific internal energy de/dt = T ds/dt - p/rho vc,c:
 
       do i=1,ntotal
@@ -306,46 +317,45 @@ c----------------------------------------------------------------------
 
 
       do k = 1,niac
-           i=pair_i(k)
-           j=pair_j(k)
-            he = 0.e0
-             rhoij = 1.e0/(rho(i)*rho(j))        
+         i=pair_i(k)
+         j=pair_j(k)
+         he = 0.e0
+         rhoij = 1.e0/(rho(i)*rho(j))        
              
-              do d=1,dim
-               h = -(p(i) + p(j))*dwdx(d,k)
-               he = he + (vx(d,i)-vx(d,j))*h
-               if (visc) then             
-                 if (d.eq.1) then
-                    h = h + (eta(i)*txx(i) + eta(j)*txx(j))*dwdx(1,k)
-                  if (dim.ge.2) then
+         do d=1,dim
+            h = -(p(i) + p(j))*dwdx(d,k)
+            he = he + (vx(d,i)-vx(d,j))*h
+            if (visc) then             
+              if (d.eq.1) then
+                  h = h + (eta(i)*txx(i) + eta(j)*txx(j))*dwdx(1,k)
+                if (dim.ge.2) then
                     h = h + (eta(i)*txy(i) + eta(j)*txy(j))*dwdx(2,k)
-                    if (dim.eq.3) then
-                     h = h + (eta(i)*txz(i) + eta(j)*txz(j))*dwdx(3,k)
-                   endif
-                 endif            
-                 elseif (d.eq.2) then
-            
-
-                   h = h + (eta(i)*txy(i) + eta(j)*txy(j))*dwdx(1,k)
-     &               + (eta(i)*tyy(i) + eta(j)*tyy(j))*dwdx(2,k)
-                    if (dim.eq.3) then
-                    h = h + (eta(i)*tyz(i) + eta(j)*tyz(j))*dwdx(3,k)
-                    endif             
-                 elseif (d.eq.3) then
+                 if (dim.eq.3) then
+                    h = h + (eta(i)*txz(i) + eta(j)*txz(j))*dwdx(3,k)
+                 endif
+                endif            
+               elseif (d.eq.2) then
+           
+                 h = h + (eta(i)*txy(i) + eta(j)*txy(j))*dwdx(1,k)
+     &           + (eta(i)*tyy(i) + eta(j)*tyy(j))*dwdx(2,k)
+                 if (dim.eq.3) then
+                   h = h + (eta(i)*tyz(i) + eta(j)*tyz(j))*dwdx(3,k)
+                 endif             
+               elseif (d.eq.3) then
  
                  h = h + (eta(i)*txz(i) + eta(j)*txz(j))*dwdx(1,k)
      &                 + (eta(i)*tyz(i) + eta(j)*tyz(j))*dwdx(2,k)
      &                 + (eta(i)*tzz(i) + eta(j)*tzz(j))*dwdx(3,k)            
-                  endif
+               endif
               endif             
-               h = h*rhoij
-               dvxdt(d,i) = dvxdt(d,i) + mass(j)*h
-               dvxdt(d,j) = dvxdt(d,j) - mass(i)*h
-             enddo
-               he = he*rhoij
-               dedt(i) = dedt(i) + mass(j)*he
-               dedt(j) = dedt(j) + mass(i)*he                  
+             h = h*rhoij
+             dvxdt(d,i) = dvxdt(d,i) + mass(j)*h
+             dvxdt(d,j) = dvxdt(d,j) - mass(i)*h
           enddo
+          he = he*rhoij
+          dedt(i) = dedt(i) + mass(j)*he
+          dedt(j) = dedt(j) + mass(i)*he                  
+      enddo
 
 
       end

@@ -259,7 +259,7 @@ c   a: slope of the line(obstacle)
       double precision xl, yl, dx, dy, theta, a, y1, y2, y3, dis,x1
 
 c   m--column n--row
-      m = 128
+      m = 60
       n = 60
       theta = pi/3
       a = tan((pi-theta)/2)
@@ -305,13 +305,13 @@ c  dambreak simulation
       if(indis.eq.0) then
         do i = 1,m
           do j = 1,n
-         y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
-          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
-          if(j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2)then
+c         y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
+c          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
+c          if(j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2)then
             ntotal = ntotal + 1
             x(1,ntotal) = x_mingeom + i*dx-dx/2
             x(2,ntotal) = y_mingeom + j*dx-dx/2
-           endif 
+c           endif 
          enddo
         enddo
 c  two columns of water   
