@@ -23,9 +23,9 @@ c     ogn     : number of over generation                        [out]
 
       integer itimestep, ntotal, itype(maxn), nvirt, mother(maxn)
       double precision hsml(maxn),mass(maxn),x(dim,maxn),vx(dim,maxn),
-     &                 rho(maxn), u(maxn), p(maxn),slope(maxn),nnp
+     &                 rho(maxn), u(maxn), p(maxn),nnp
       integer i, j, d, im,mp,np, qp,scale_k, nwall, flag,ocn(maxn)
-      double precision xl, dx, v_gate, tiny, b, a, y1, y2, dps,period
+      double precision xl, dx, v_gate, tiny, b, a, x1,y1, y2, dps,period
 c      common nvirt
       real corner(2,5)
 
@@ -62,7 +62,7 @@ c   in this case, the computing domain is defaultly set as square
           ocn(i) =1
         enddo
 c      if(geometry) then
-       a = tan((pi-2*pi/3)/2)
+       a = tan((pi-pi/3)/2)
 c       print *,a
        mp = mmp 
        np = mp/2
@@ -74,6 +74,7 @@ c      endif
 	dx = xl/mmp
 c   wedge height        
        nnp = 0.2/dx
+c       print *,nnp
        qp = int(nnp/a+1)
        if (indis.eq.2) nnp = qp*a
         period = a*pi/(2*nnp*dx)
@@ -172,13 +173,14 @@ c    downside  except the wedge
 
 c          if ((x(2,i).le.a*x(1,i)-a*corner(1,4)).or.
 c     &    (x(2,i).le.-a*x(1,i)+a*corner(1,3)))  then
+          if(x(1,i).lt.corner(1,3).or.x(1,i).gt.corner(1,4))then
            nvirt=nvirt+1
            x(1, ntotal + nvirt) = x(1,i)
            x(2, ntotal + nvirt) = 2*y_mingeom-x(2,i)
            vx(1, ntotal + nvirt) = vx(1,i)
            vx(2, ntotal + nvirt) = -vx(2,i)
            mother(ntotal + nvirt)=i
-c          endif
+          endif
        endif
 c   leftside
           if ((x(1,i).gt.x_mingeom).and.
@@ -205,8 +207,8 @@ c   two bottom corners
       enddo
 
         if(geom.ne.0)then
-          call geom_generate(itimestep,scale_k,corner,itype, hsml,slope,
-     &   nnp,ntotal,nvirt,nwall,x,vx,mother,ocn)
+          call geom_generate(itimestep,scale_k,corner,itype, hsml,
+     &   nnp,ntotal,nvirt,x,vx,mother,ocn)
         endif
        do i=ntotal+1,ntotal+nvirt
             itype(i) = -2
@@ -214,7 +216,11 @@ c   two bottom corners
             p(i)=p(mother(i))
             rho(i)=rho(mother(i))
             u(i)=u(mother(i))
-           mass(i)=mass(mother(i))/ocn(mother(i))
+            if(ocn(mother(i)).gt.1)then
+              mass(i)=mass(mother(i))/(ocn(mother(i))-1)
+            else
+              mass(i)=mass(mother(i))
+            endif
           if(geom.eq.1)then
            dps = sqrt((x(1,i)-corner(1,5))**2+(x(2,i)-corner(2,5))**2) 
             if (x(2,i).gt.a*x(1,i)-a*corner(1,3)-4*hsml(i).and.
@@ -231,7 +237,7 @@ c   two bottom corners
 
       if(ex_force) then
 c     Monaghan type virtual particle on the Lower side
-
+c     room for the wedge(need to be improved)
         do i = 1, 2*mp+1
           if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
      &   nnp*dx/a)then
@@ -266,14 +272,26 @@ c     Monaghan type particle on upper side
       
 c    Monaghan type virtual particle as obsatacle
 c    symmetric to centerline 
-      if(geometry)then      
-       do i = 1, qp*4
+      if(geometry)then   
+       if(geom.eq.1)then       
+        do i = 1, qp*4
           nwall = nwall + 2
           x(1,ntotal+nvirt+nwall-1) = x_mingeom+(np-qp)*dx+i*dx/4
           x(1,ntotal+nvirt+nwall) = xl-x(1,ntotal+nvirt+nwall-1)
           x(2,ntotal+nvirt+nwall-1) = y_mingeom+a*i*dx/4
           x(2,ntotal+nvirt+nwall) = x(2,ntotal+nvirt+nwall-1)
-       enddo
+        enddo
+       else if(geom.eq.2) then
+        do i = 1, qp*2
+          x1 = x_mingeom+(np-qp)*dx+i*dx/2
+          nwall = nwall +2
+          x(1,ntotal+nvirt+nwall-1) = x1
+          x(1,ntotal+nvirt+nwall) = xl-x(1,ntotal+nvirt+nwall-1)
+          x(2,ntotal+nvirt+nwall-1) = nnp*dx*sin(a*pi/(2*nnp*dx)*
+     &  (x1-corner(1,3)))
+          x(2,ntotal+nvirt+nwall) = x(2,ntotal+nvirt+nwall-1)
+         enddo
+       endif        
       endif
 c    small baffle at center
       if(dambreak) then
@@ -296,7 +314,7 @@ c        nwall = nvirt
            vx(1, i) = 0.
            vx(2, i) = 0.
 c     assign velocity to virtual particles on upside           
-           if (cavity.and.x(2,i).eq.y_maxgeom) vx(1,i) =1.0
+           if (cavity.and.x(2,i).eq.y_maxgeom) vx(1,i) = 1.0
            rho (i) = 1000.
            mass(i) = rho(i)*dx*dx
            p(i) = 0.

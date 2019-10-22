@@ -77,7 +77,7 @@ c          = 1, triangle wedge
 c          = 2, continous curve, like sin,exp,cubic
 c          = 3, half sphere
       integer geom
-      parameter(geom = 1)
+      parameter(geom = 2)
 c   
 c     Initital distribution
 c     indis = 0, standard distribution
@@ -85,7 +85,7 @@ c           = 1, distribute according to wedge
 c           = 2, totally diffrent stencil
 c           = 3, body-fitted grid based on algerbic method
       integer indis
-      parameter(indis = 0)
+      parameter(indis = 1)
 
 c     Switches for different senarios
 
@@ -124,19 +124,19 @@ c     shifting = .true. : shift algorithm
      &        mirror, gate, dummy, shifting
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .false. )
+      parameter ( average_velocity  = .true. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
       parameter ( visc  = .false. )
-      parameter ( ex_force  = .true.)
+      parameter ( ex_force  = .false.)
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .false. )            
+      parameter ( nor_density  = .true. )            
       parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
-      parameter ( mirror = .false. )
+      parameter ( mirror = .true. )
       parameter ( dummy = .false. )
       parameter ( shifting = .false. )
 
@@ -165,8 +165,8 @@ c    c0: sound speed according to a*sqrt(g*h),a:10~20
 c    damp_t: damping time in damping technique     
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 2.25743e1,   
-     &            damp_t = 0 )
+     &            c0 = 2.42487e1,   
+     &            damp_t = 0.2 )
 
 c    Switch for different benchmarks
 c    dambreak : this is the test case from Crespo (2008)

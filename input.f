@@ -50,9 +50,9 @@ c     load initial particle information from external disk file
 c select cases --updating..      
       if(dambreak) call dam_break(x, vx, mass, rho, p, u, 
      &                      itype, hsml, ntotal)
-      if(static) call static_water(x, vx, mass, rho,
-     &                     p,u, itype, hsml, ntotal)
-      if(geometry) call two_phase(x, vx, mass, rho, p, u,
+      if(static) call static_water(x, vx, mass, rho,p, u,
+     &                      itype, hsml, ntotal)
+      if(geometry) call wedge(x, vx, mass, rho, p, u,
      &                      itype, hsml, ntotal)
       if(waterdrop) call water_fall(x,vx, mass,rho, p, u,
      &                      itype, hsml ,ntotal)
@@ -222,26 +222,17 @@ c        p(i) = 0
       end
 
 
-      subroutine two_phase(x, vx, mass, rho, p, u, itype, hsml, ntotal)
+      subroutine wedge(x, vx, mass, rho, p, u, itype, hsml, ntotal)
 c---------------------------------------------------------------
 c   input for static water benchmark with two phases, and an obstacle
 c   on the wall, which can be in any geomatrical shape.In this case,we
 c   choose it as isoceles right triangle
 c   parameter list is the same as above, except for the digitals
 
-c   this subroutine contains two set of testing geometry, which are like:
-c   |                         I
-c   |                         |
-c   L__________               |
-c             /               |             /\
-c            /                |            /  \
-c           /                 |           /    \
-c          /                  |     _____/      \_____
-c         /                   |
-c        /                    |
-c       /                     I
-c   on the left wall                  in the bottom  
-
+c   this subroutine contains several sets of testing geometry:
+c   i) a triangle wedge with arbitary angle
+c   ii) smoothing curve like sine function
+c   iii) half sphere/round
 c   mp:rows of particle above the obstacle
 c   np:rows of particle below the obstacle
 c   qp:colums of particle right below the obstacle
@@ -259,19 +250,19 @@ c   a: slope of the line(obstacle)
       double precision xl, yl, dx, dy, theta, a, y1, y2, y3, dis,x1
 
 c   m--column n--row
-      m = 30
-      n = 30
-      theta = 2*pi/3
+      m = 128
+      n = 60
+      theta = pi/3
       a = tan((pi-theta)/2)
 
       xl = x_maxgeom-x_mingeom
       dx = xl/mmp
 c      dy = (y_maxgeom-y_mingeom)/n
       
-      mp = 10
+      mp = 40
       np = int(n/a)
       qp = int((n-mp)/a)
-c      hp = 20
+      hp = 20
       
 c      ntotal = m*(mp+np)-qp*(qp+1)/2
 c    geometry 1      
@@ -340,7 +331,7 @@ c          if( j*dx-(a-1)*dx.gt.(n-mp)*dx) then
 c         endif 
         enddo
        enddo
-c   distribute particles along wall via transformation of coordinates 
+c   distribute particles along wall  
 c       do j = 1,2*qp+2
 c        do i =1,m/2-qp+1
 c            x1 = cos(theta)*((j-1)*dx+dx/4-(i-1)*dx/a)-
@@ -359,7 +350,11 @@ c       enddo
         do i = 1,n-mp
           do j = 1,m/2
             y1 = (i-1)*dx+dx/2
-            x1 = (y1-(n-mp)*dx+a*xl/2)/a-(j-1)*dx-dx/2
+            dis = (j-1)*dx+dx/2
+c     geom-1            
+c            x1 = (y1-(n-mp)*dx+a*xl/2)/a-dis
+c     geom-2
+            x1 = 2*hp*dx/(a*pi)*asin(y1/hp/dx)+xl/2-hp*dx/a-dis 
             if(x1.gt.x_mingeom) then
                ntotal = ntotal +2 
                x(1,ntotal-1) = x1
@@ -378,7 +373,7 @@ c          do j =1,hp-1
 c           ntotal = ntotal +1
 c           print *,real(j)/hp
 c   !!! caution: j is an int, when it is devided by a bigger int,
-c   convert it into real type first           
+c   convert it into real/float type first           
 c            x(1,ntotal) = xl/2+(a+1)*dx/2*cos((real(j)/hp)*pi)
 c            x(2,ntotal) = (n-mp)*dx+(a+1)*dx/2*sin((real(j)/hp)*pi)
 c          enddo
