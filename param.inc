@@ -23,9 +23,9 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  .52e0     ,
+      parameter ( x_maxgeom =  1.28e0     ,
      &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  .52e0     ,
+     &            y_maxgeom =  .64e0     ,
      &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
@@ -77,12 +77,13 @@ c          = 1, triangle wedge
 c          = 2, continous curve, like sin,exp,cubic
 c          = 3, half sphere
       integer geom
-      parameter(geom = 0)
+      parameter(geom = 1)
 c   
 c     Initital distribution
 c     indis = 0, standard distribution
 c           = 1, distribute according to wedge
 c           = 2, totally diffrent stencil
+c           = 3, body-fitted grid based on algerbic method
       integer indis
       parameter(indis = 0)
 
@@ -123,15 +124,15 @@ c     shifting = .true. : shift algorithm
      &        mirror, gate, dummy, shifting
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .true. )
+      parameter ( average_velocity  = .false. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
-      parameter ( visc  = .true. )
+      parameter ( visc  = .false. )
       parameter ( ex_force  = .true.)
-      parameter ( visc_artificial  = .false. )
+      parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
-      parameter ( self_gravity  = .false. )      
+      parameter ( self_gravity  = .true. )      
       parameter ( nor_density  = .false. )            
       parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
@@ -157,14 +158,14 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 52 ) 
+     &            mmp = 128 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
 c    damp_t: damping time in damping technique     
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 3.38615e1,   
+     &            c0 = 2.25743e1,   
      &            damp_t = 0 )
 
 c    Switch for different benchmarks
@@ -176,7 +177,7 @@ c               dambreak and floating objects as well
 c    waterdrop : a small waterball fall onto steps or obstacles(Liu)
       logical dambreak, static, geometry, waterdrop,cavity
       parameter ( dambreak = .false.)
-      parameter ( static = .true.)
-      parameter ( geometry = .false.)
+      parameter ( static = .false.)
+      parameter ( geometry = .true.)
       parameter ( waterdrop = .false.)
-      parameter ( cavity = .true.)
+      parameter ( cavity = .false.)

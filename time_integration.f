@@ -35,7 +35,7 @@ c      dt-- timestep                                             [input]
       double precision  x_min(dim, maxn), v_min(dim, maxn), u_min(maxn),
      &       rho_min(maxn), dx(dim,maxn), dvx(dim, maxn), du(maxn),  
      &       drho(maxn),  av(dim, maxn), ds(maxn),
-     &       t(maxn), tdsdt(maxn), temp_u, temp_rho, sumvel 
+     &       t(maxn), tdsdt(maxn), temp_u, temp_rho, sumvel, maxvel 
       double precision  time, water_h
       real :: bound(2,2)
     
@@ -77,7 +77,7 @@ c      print *,'before single step:', p(ntotal+1)
 
         call single_step(itimestep,nstart, dt, ntotal,nvirt,nwall, hsml,
      &        mass,x, vx,u, s, rho, p, t, tdsdt, du, ds,c, itype, av,
-     &        niac, pair_i, pair_j, sumvel)  
+     &        niac, pair_i, pair_j, sumvel,maxvel)  
      
 c      deal with those particles out of domain
 c        do i =1,ntotal
@@ -94,7 +94,7 @@ c              p_record(1) = itimestep
              i = itimestep/print_step 
              p_record(i) = p(1)
              v_record(1,i) = sumvel/ntotal
-             v_record(2,i) = vx(2,ntotal/2)
+             v_record(2,i) = maxvel
              x_record(1,i) = maxval(x(1,1:ntotal))/water_h
              x_record(2,i) = maxval(x(2,1:ntotal))/water_h
         endif

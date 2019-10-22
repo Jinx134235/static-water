@@ -259,16 +259,16 @@ c   a: slope of the line(obstacle)
       double precision xl, yl, dx, dy, theta, a, y1, y2, y3, dis,x1
 
 c   m--column n--row
-      m = 60
-      n = 60
-      theta = pi/3
+      m = 30
+      n = 30
+      theta = 2*pi/3
       a = tan((pi-theta)/2)
 
       xl = x_maxgeom-x_mingeom
       dx = xl/mmp
 c      dy = (y_maxgeom-y_mingeom)/n
       
-      mp = 40
+      mp = 10
       np = int(n/a)
       qp = int((n-mp)/a)
 c      hp = 20
@@ -305,40 +305,26 @@ c  dambreak simulation
       if(indis.eq.0) then
         do i = 1,m
           do j = 1,n
-c         y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
-c          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
-c          if(j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2)then
-            ntotal = ntotal + 1
-            x(1,ntotal) = x_mingeom + i*dx-dx/2
-            x(2,ntotal) = y_mingeom + j*dx-dx/2
-c           endif 
+           y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2+dx/2
+            y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2+dx/2
+          if(j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2)then
+            ntotal = ntotal + 2
+            x(1,ntotal-1) = x_mingeom + i*dx-dx/2
+            x(1,ntotal) = xl-x(1,ntotal-1)
+            x(2,ntotal-1) = y_mingeom + j*dx-dx/2
+            x(2,ntotal) = x(2,ntotal-1)
+           endif 
          enddo
         enddo
 c  two columns of water   
 c        do i = 1,m
 c          do j =1,n
-c         ntotal = ntotal + 1
-c            x(1,ntotal) = x_maxgeom - i*dx+dx/2
-c            x(2,ntotal) = y_mingeom + j*dx-dx/2
+c          ntotal = ntotal + 1
+c           x(1,ntotal) = x_maxgeom - i*dx+dx/2
+c           x(2,ntotal) = y_mingeom + j*dx-dx/2
 c         enddo
 c        enddo
 
-c   adjust the y-coordinate a little for those near to wedge
-c   to make the paricles distribute more evenly while not adding or
-c   removing any particle, this may be useful in minor grid     
-c       do i = 1,ntotal
-c          if (x(1,i).lt.xl/2)then
-c             dis = abs((a*x(1,i)-x(2,i)+(n-mp)*dx-a*xl/2))/sqrt(a**2+1)
-c             if(dis.lt.dx/2.and.x(2,i)+dx-dis*2.le.x(2,i+1)-dx/2)then
-c               x(2,i) = x(2,i)+dx-dis*2
-c             endif
-c          else
-c            dis = abs((-a*x(1,i)-x(2,i)+(n-mp)*dx+a*xl/2))/sqrt(a**2+1)
-c             if(dis.lt.dx/2.and.x(2,i)+dx-dis*2.le.x(2,i+1)-dx/2) then
-c               x(2,i) = x(2,i)+dx-dis*2
-c             endif
-c          endif
-c       enddo
       else if(indis.eq.1) then     
 c   distribution 2:
        do i = 1,m
@@ -432,8 +418,31 @@ c    . . . .
           endif
          enddo
         enddo
+c  generate particles based on algebric grid--general method
+      else if(indis.eq.3) then
+         do i = 1,mmp/2
+           do j = 1,n
+             x1 = x_mingeom+(i-1)*dx+dx/2
+             y1 = a*(x1-xl/2+(n-mp)*dx/a)
+             y2 = float(j)/float(n)
+             if(x1.le.xl/2-(n-mp)*dx/a)then
+                ntotal = ntotal + 2
+                x(1,ntotal-1) = x1
+                x(2,ntotal-1) = y_mingeom+j*dx-dx/2
+                x(1,ntotal) = xl-x1
+                x(2,ntotal) = x(2,ntotal-1)
+              else if(x1.gt.xl/2-(n-mp)*dx/a.and.x1.lt.xl/2)then
+                ntotal = ntotal + 2
+                x(1,ntotal-1) = x1
+                x(2,ntotal-1) = y1+y2*(n*dx-y1)
+                x(1,ntotal) = xl-x1
+                x(2,ntotal) = x(2,ntotal-1)
+              endif
+           enddo
+          enddo
+
       endif
-      
+
       do i = 1,ntotal   
         vx(1, i) = 0.
         vx(2, i) = 0.

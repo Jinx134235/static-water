@@ -62,10 +62,10 @@ c   in this case, the computing domain is defaultly set as square
           ocn(i) =1
         enddo
 c      if(geometry) then
-       a = tan(pi/3)
+       a = tan((pi-2*pi/3)/2)
 c       print *,a
        mp = mmp 
-       np = mp
+       np = mp/2
 
 c      endif
       
@@ -76,7 +76,7 @@ c   wedge height
        nnp = 0.2/dx
        qp = int(nnp/a+1)
        if (indis.eq.2) nnp = qp*a
-        period = sqrt(3.)*pi/(2*nnp*dx)
+        period = a*pi/(2*nnp*dx)
 
 c  speed of the gate(dambreak)/ speed of the top(cavityflow)        
       v_gate = 1.5
@@ -233,12 +233,12 @@ c   two bottom corners
 c     Monaghan type virtual particle on the Lower side
 
         do i = 1, 2*mp+1
-c          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
-c     &   nnp*dx/a)then
+          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
+     &   nnp*dx/a)then
            nwall = nwall + 1
            x(1, ntotal + nvirt + nwall) = x_mingeom+(i-1)*dx/2
            x(2, ntotal + nvirt + nwall) = y_mingeom
-c         endif
+         endif
        enddo
 c      if(itimestep.eq.1) then
         do i = 1, np*2
@@ -248,7 +248,7 @@ c      if(itimestep.eq.1) then
         enddo
 
 c     Monaghan type virtual particle on the Right side
-      if (static)then
+      if (static.or.geometry)then
        do i = 1, np*2
           nwall = nwall + 1
           x(1, ntotal + nvirt+nwall) = x_maxgeom
