@@ -2,6 +2,8 @@
      &           hsml, ntotal, maxtimestep, dt, current_ts)
      
 c----------------------------------------------------------------------
+c    !!! this subroutine has been modified a lot
+c    !!! original integration scheme is leap-frog, removed
 c      x-- coordinates of particles                       [input/output]
 c      vx-- velocities of particles                       [input/output]
 c      mass-- mass of particles                                  [input]
@@ -26,38 +28,61 @@ c      dt-- timestep                                             [input]
       implicit none     
       include 'param.inc'
       
-      integer itype(maxn), ntotal, maxtimestep, niac
+      integer itype(maxn), ntotal, maxtimestep, niac,np
       double precision x(dim, maxn), vx(dim, maxn), mass(maxn), 
      &       rho(maxn), p(maxn), u(maxn), c(maxn), s(maxn), e(maxn), 
      &       hsml(maxn), dt
       integer i, j, k, im,itimestep, d, current_ts, nstart, nvirt,nwall,
-     &      pair_i(max_interaction), pair_j(max_interaction)       
+     &      pair_i(max_interaction), pair_j(max_interaction),scale_k       
       double precision  x_min(dim, maxn), v_min(dim, maxn), u_min(maxn),
      &       rho_min(maxn), dx(dim,maxn), dvx(dim, maxn), du(maxn),  
-     &       drho(maxn),  av(dim, maxn), ds(maxn),
+     &       drho(maxn),  av(dim, maxn), ds(maxn),dxiac(dim),hv(dim),
      &       t(maxn), tdsdt(maxn), temp_u, temp_rho, sumvel, maxvel 
-      double precision  time, water_h
+      double precision  time, water_h, dis, xl, wij
       real :: bound(2,2)
     
-      real, allocatable :: p_record(:),v_record(:,:),x_record(:,:)
+      real, allocatable :: p_record(:),v_record(:,:),x_record(:,:),
+     &        pro(:,:)
       integer, allocatable :: step(:)
       allocate(p_record(200))
       allocate(v_record(2,200))
       allocate(x_record(2,200))
       allocate(step(4))
 c      common nvirt
-
+      np = 60
+      allocate(pro(4,100))
       water_h = 0.3      
+      xl = x_maxgeom-x_mingeom
+c      dx = xl/mmp
       bound(1,:) = (/x_mingeom,x_maxgeom/)
       bound(2,:) = (/y_mingeom,y_maxgeom/)  
-c    timepoint for output and observation      
+c    timepoint for output and observation in dambreak     
       step(:) = (/815,1595,2410,3673/) 
       do i = 1, ntotal
         do d = 1, dim
           av(d, i) = 0.
         enddo
       enddo  
-     
+c   distribute profile points     
+      do j = 1,np
+        if (j.le.20) then
+           pro(1,j) =xl/2+.2/sqrt(.3)-j*xl/mmp/sqrt(.3)
+        else
+           pro(1,j) = xl/2
+        endif
+        pro(2,j) = j*xl/mmp
+        pro(3,j) = 0.
+        pro(4,j) = 0.
+      enddo
+      
+      if(skf.eq.1) then
+          scale_k = 2
+      elseif(skf.eq.2) then
+          scale_k = 3
+      elseif(skf.eq.3) then
+          scale_k = 3
+      endif
+
       nstart = current_ts
       do itimestep = nstart+1, nstart+maxtimestep   
 	   
@@ -70,16 +95,13 @@ c        time=current_ts*dt
          write(*,*)'_____________________________________________'
         endif      
        
-
 c---  Definition of variables out of the function vector:    
-c      print *,'before single step:', p(ntotal+1)     
-
 
         call single_step(itimestep,nstart, dt, ntotal,nvirt,nwall, hsml,
      &        mass,x, vx,u, s, rho, p, t, tdsdt, du, ds,c, itype, av,
      &        niac, pair_i, pair_j, sumvel,maxvel)  
      
-c      deal with those particles out of domain
+c      deal with those particles out of domain, maybe not work
 c        do i =1,ntotal
 c          do d  =1,dim
 c           if(x(d,i).gt.bound(d,2).or.x(d,i).lt.bound(d,1)) then
@@ -88,17 +110,18 @@ c             mass(i) = 0
 c           endif
 c          enddo
 c        enddo
-c       do i =1,4 
-        if (mod(itimestep,print_step).eq.0) then
+       do i =1,4 
+c        if (mod(itimestep,print_step).eq.0) then
 c              p_record(1) = itimestep
-             i = itimestep/print_step 
+         if(itimestep.eq.step(i)) then
+c             i = itimestep/print_step 
              p_record(i) = p(1)
              v_record(1,i) = sumvel/ntotal
              v_record(2,i) = maxvel
              x_record(1,i) = maxval(x(1,1:ntotal))/water_h
              x_record(2,i) = maxval(x(2,1:ntotal))/water_h
-        endif
-c       enddo
+         endif
+       enddo
 c        print *,vx(2,1)
 c        if (vx(2,1).gt.0) then
 c            print *,itimestep
@@ -122,15 +145,43 @@ c      endif
 
         if(itimestep.eq.nstart+maxtimestep) then
             open(20,file="../data/record.dat")
-            do i =1,(nstart+maxtimestep)/print_step
+c            do i =1,(nstart+maxtimestep)/print_step
 c                step = i*print_step
-c            do i = 1,4
+            do i = 1,4
               write(20,1002) i,p_record(i),v_record(1,i),v_record(2,i),
      &    x_record(1,i),x_record(2,i)
             enddo
 1002      format(1x, I6, 5(2x, e14.8))
           close(20)
-        endif        
+                
+c  extract pressure profile in wedge case
+         do i = 1,ntotal
+           do j = 1,np
+             dis = (x(1,i)-pro(1,j))**2+(x(2,i)-pro(2,j))**2
+             dis = sqrt(dis)
+             do d = 1,dim
+                dxiac(d) = x(d,i)-pro(d,j)
+             enddo
+             if (dis.lt.scale_k*hsml(i))then
+                call kernel(dis,dxiac,hsml(i),wij,hv)
+                 pro(3,j) = pro(3,j)+p(i)*wij
+                 pro(4,j) = pro(4,j)+wij
+             endif
+           enddo
+          enddo
+
+          do i = 1,np
+            pro(3,i) = pro(3,i)/pro(4,i)
+          enddo
+
+          open(30,file="../data/pre_pro.dat")
+            do i = 1,np
+              write(30,1003) i,pro(1,i),pro(2,i),pro(3,i)
+            enddo
+1003      format(1x, I6, 3(2x, e14.8))
+          close(30)
+
+         endif
 
 	if (mod(itimestep,save_step).eq.0) then
           call output(x, vx, mass, rho, p, u, c, itype, hsml, ntotal)
@@ -148,6 +199,7 @@ c100     format(1x,3(2x,e12.6))
 	 
       enddo
 c      print *,current_ts
+      deallocate(pro)
       deallocate(step)
       deallocate(x_record)
       deallocate(v_record)

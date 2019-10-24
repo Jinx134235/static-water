@@ -92,7 +92,7 @@ c     Determine range of grid to go through:
           maxxcell(d) = min(dpxgcell(d),ngridx(d))
         enddo
 
-c      if (i.eq.7380) print *,minxcell,maxxcell
+c      if (i.eq.7350) print *,minxcell,maxxcell
 
 c     Search grid:
       

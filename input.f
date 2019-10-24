@@ -296,25 +296,18 @@ c  dambreak simulation
       if(indis.eq.0) then
         do i = 1,m
           do j = 1,n
-           y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2+dx/2
-            y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2+dx/2
+           y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
+            y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
           if(j*dx-dx/2.gt.y1.or.j*dx-dx/2.gt.y2)then
-            ntotal = ntotal + 2
-            x(1,ntotal-1) = x_mingeom + i*dx-dx/2
-            x(1,ntotal) = xl-x(1,ntotal-1)
-            x(2,ntotal-1) = y_mingeom + j*dx-dx/2
-            x(2,ntotal) = x(2,ntotal-1)
+            ntotal = ntotal + 1
+            x(1,ntotal) = x_mingeom + i*dx-dx/2
+c            x(1,ntotal) = xl-x(1,ntotal-1)
+            x(2,ntotal) = y_mingeom + j*dx-dx/2
+c            x(2,ntotal) = x(2,ntotal-1)
            endif 
          enddo
         enddo
-c  two columns of water   
-c        do i = 1,m
-c          do j =1,n
-c          ntotal = ntotal + 1
-c           x(1,ntotal) = x_maxgeom - i*dx+dx/2
-c           x(2,ntotal) = y_mingeom + j*dx-dx/2
-c         enddo
-c        enddo
+
 
       else if(indis.eq.1) then     
 c   distribution 2:
@@ -352,9 +345,9 @@ c       enddo
             y1 = (i-1)*dx+dx/2
             dis = (j-1)*dx+dx/2
 c     geom-1            
-c            x1 = (y1-(n-mp)*dx+a*xl/2)/a-dis
+            x1 = (y1-(n-mp)*dx+a*xl/2)/a-dis
 c     geom-2
-            x1 = 2*hp*dx/(a*pi)*asin(y1/hp/dx)+xl/2-hp*dx/a-dis 
+c            x1 = 2*hp*dx/(a*pi)*asin(y1/hp/dx)+xl/2-hp*dx/a-dis 
             if(x1.gt.x_mingeom) then
                ntotal = ntotal +2 
                x(1,ntotal-1) = x1
@@ -394,22 +387,22 @@ c   distribution 3:another set of grid
 c    . . . .
 c     . . .
 c    . . . .
-          if (a*(j-.5)*dx+dx/2.gt.y1.or.a*(j-.5)*dx+dx/2.gt.y2) then
+          if (a*(j-.5)*dx.gt.y1.or.a*(j-.5)*dx.gt.y2) then
             ntotal = ntotal + 1
              x(1,ntotal) = x_mingeom+i*dx-dx/2
-             x(2,ntotal) = y_mingeom+a*(j-1)*dx+(a+1)*dx/2
+             x(2,ntotal) = y_mingeom+a*(j-1)*dx+a*dx/2
           endif
          enddo
        enddo
 
-       do i = 1,m-1
+       do i = 1,m+1
         do j = 1,np+1
-          y1 = a*i*dx+(n-mp)*dx-a*xl/2
-           y2 = -a*i*dx+(n-mp)*dx+a*xl/2
-          if (a*(j-1)*dx+dx/2.gt.y1.or.a*(j-1)*dx+dx/2.gt.y2) then
+          y1 = a*(i-1)*dx+(n-mp)*dx-a*xl/2
+           y2 = -a*(i-1)*dx+(n-mp)*dx+a*xl/2
+          if (a*(j-1)*dx.gt.y1.or.a*(j-1)*dx.gt.y2) then
              ntotal = ntotal + 1
-             x(1,ntotal) = x_mingeom+i*dx
-             x(2,ntotal) = y_mingeom+a*(j-1)*dx+dx/2
+             x(1,ntotal) = x_mingeom+(i-1)*dx
+             x(2,ntotal) = y_mingeom+a*(j-1)*dx
           endif
          enddo
         enddo

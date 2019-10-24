@@ -47,7 +47,7 @@ c      print *,dd
 c     only for the wall particles
 c      do i = 1,ntotal
 c        do j = ntotal+nvirt+1,ntotal+nvirt+nwall     
-        if(itype(j).lt.0) then  
+        if(itype(j).eq.0) then  
           rr = 0.              
           do d=1,dim
             dx(d) =  x(d,i) -  x(d,j)

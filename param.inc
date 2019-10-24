@@ -77,7 +77,7 @@ c          = 1, triangle wedge
 c          = 2, continous curve, like sin,exp,cubic
 c          = 3, half sphere
       integer geom
-      parameter(geom = 2)
+      parameter(geom = 1)
 c   
 c     Initital distribution
 c     indis = 0, standard distribution
@@ -85,7 +85,7 @@ c           = 1, distribute according to wedge
 c           = 2, totally diffrent stencil
 c           = 3, body-fitted grid based on algerbic method
       integer indis
-      parameter(indis = 1)
+      parameter(indis = 2)
 
 c     Switches for different senarios
 

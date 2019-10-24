@@ -15,8 +15,8 @@ c     vx     : Velocities of all particles                      [in|out]
 c     rho    : Density                                          [in|out]
 c     u      : internal energy                                  [in|out]
 c     itype   : type of particles                               [in|out]
-c     mother  : indicating which particle it was generated from  [out]
-c     ogn     : number of over generation                        [out]
+c     mother  : indicating which particle it was generated from    [out]
+c     ogn     : number of over generation                          [out]
 
       implicit none
       include 'param.inc'
@@ -66,18 +66,15 @@ c      if(geometry) then
 c       print *,a
        mp = mmp 
        np = mp/2
-
-c      endif
-      
-
+       if(static) np =mp
 	xl = x_maxgeom-x_mingeom
 	dx = xl/mmp
 c   wedge height        
        nnp = 0.2/dx
-c       print *,nnp
        qp = int(nnp/a+1)
        if (indis.eq.2) nnp = qp*a
-        period = a*pi/(2*nnp*dx)
+       print *,nnp
+       period = a*pi/(2*nnp*dx)
 
 c  speed of the gate(dambreak)/ speed of the top(cavityflow)        
       v_gate = 1.5
@@ -167,13 +164,13 @@ c    rightside
             vx(2, ntotal + nvirt)=vx(2,i)
             mother(ntotal + nvirt)=i
            endif
-c    downside  except the wedge
+c    downside
         if ((x(2,i).gt.y_mingeom).and.
      &    (x(2,i).lt.y_mingeom+scale_k*hsml(i)))then
 
-c          if ((x(2,i).le.a*x(1,i)-a*corner(1,4)).or.
-c     &    (x(2,i).le.-a*x(1,i)+a*corner(1,3)))  then
-          if(x(1,i).lt.corner(1,3).or.x(1,i).gt.corner(1,4))then
+          if ((x(2,i).le.a*x(1,i)-a*corner(1,4)).or.
+     &    (x(2,i).le.-a*x(1,i)+a*corner(1,3)))  then
+c          if(x(1,i).lt.corner(1,3).or.x(1,i).gt.corner(1,4))then
            nvirt=nvirt+1
            x(1, ntotal + nvirt) = x(1,i)
            x(2, ntotal + nvirt) = 2*y_mingeom-x(2,i)
@@ -239,12 +236,12 @@ c   two bottom corners
 c     Monaghan type virtual particle on the Lower side
 c     room for the wedge(need to be improved)
         do i = 1, 2*mp+1
-          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
-     &   nnp*dx/a)then
+c          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
+c     &   nnp*dx/a)then
            nwall = nwall + 1
            x(1, ntotal + nvirt + nwall) = x_mingeom+(i-1)*dx/2
            x(2, ntotal + nvirt + nwall) = y_mingeom
-         endif
+c         endif
        enddo
 c      if(itimestep.eq.1) then
         do i = 1, np*2
@@ -302,10 +299,10 @@ c    small baffle at center
          enddo
       endif
 c    baffle
-c       do i = 1,np*2-20
+c       do i = 1,np*2-10
 c         nwall = nwall +1
-c          x(1,ntotal+nvirt+nwall) = x_mingeom+40*dx
-c            x(2,ntotal+nvirt+nwall) = y_maxgeom-(i-1)*dx/2
+c          x(1,ntotal+nvirt+nwall) = x_mingeom+30*dx
+c          x(2,ntotal+nvirt+nwall) = y_maxgeom-(i-1)*dx/2
 c        enddo
 
 
@@ -320,7 +317,7 @@ c     assign velocity to virtual particles on upside
            p(i) = 0.
            u(i) = 357.1
 c      special type for wall particle           
-           itype(i) = -2
+           itype(i) = 0
            hsml(i) = 1.3*dx
          enddo
        endif

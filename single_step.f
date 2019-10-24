@@ -61,9 +61,10 @@ c      common nvirt
           grap(d,i) = 0.
         enddo
       enddo  
-
+c  particle on gate
       np = 31
-      nnp = 10
+c  particle indicating wedge height      
+      nnp = 20
       xl = x_maxgeom-x_mingeom
       dx = xl/mmp
       a  = tan(pi/3)   
@@ -117,7 +118,7 @@ c     and optimzing smoothing length
       endif
      
       ntotalvirt = ntotal + nvirt + nwall 
-c      print *,ntotal,nvirt,nwall
+c     print *,ntotal,nvirt,nwall
       if (nnps.eq.1) then 
         call direct_find(itimestep, ntotal,nvirt, hsml,x,niac,pair_i,
      &       pair_j,w,dwdx,ns)
@@ -187,6 +188,7 @@ c   pressure correction as well as density
 c        b = c0**2*1000/7
         do i = ntotal+1,ntotal+nvirt
            p(i) = p(mother(i))
+c           if(i.eq.ntotal+1) print *,p(i)
            rho(i) = rho(mother(i))
            if((x(2,i).lt.y_mingeom).or.(x(2,i).lt.a*x(1,i)-a*xl/2+nnp*dx
      &    .and.x(2,i).lt.-a*x(1,i)+a*xl/2+nnp*dx)) then
@@ -196,7 +198,7 @@ c        b = c0**2*1000/7
          enddo
       endif
 c  Shepard filter
-       if (nor_density.and.mod(itimestep,30).eq.0) then
+       if (dynamic.and.mod(itimestep,30).eq.0) then
          call sum_density(ntotalvirt,hsml,mass,niac,pair_i,pair_j,w,
      &        itype,rho)
        endif
@@ -345,9 +347,8 @@ c       open(30,file="../data/trace_p.dat")
         open(60,file="../data/other_vp.dat")            
         write(40,*) nvirt, nwall
         do i = ntotal + 1, ntotal + nvirt + nwall         
-           write(40,1004) i, (x(d, i), d=1,dim), (vx(d, i), d = 1, dim)              
-           write(50,1005) i, mass(i), rho(i), p(i), u(i)
-           write(60,1006) i, itype(i), hsml(i), mother(i)                               
+           write(40,1004) i, (x(d, i), d=1,dim), (vx(d, i), d = 1, dim)                        write(50,1005) i, mass(i), rho(i), p(i), u(i)
+           write(60,1006) i, itype(i), hsml(i), mother(i)                           
         enddo       
 1004    format(1x, I6, 4(2x, e14.8))
 1005    format(1x, I6, 4(2x, e14.8)) 
@@ -362,7 +363,7 @@ c       open(30,file="../data/trace_p.dat")
 c          write(*,*) dvx(2,int(ntotal/2))
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
-          write(*,*) '**** average velocity:', real(sumvel/ntotal)
+c          write(*,*) '**** average velocity:', real(sumvel/ntotal)
 c           write(*,*) '**** particle moving slowest ****', mini         
 c         write(*,102)'velocity(y)','internal(y)','total(y)'   
 c          write(*,103)  x(1,mini),x(2,mini),vx(1,mini),vx(2,mini) 
