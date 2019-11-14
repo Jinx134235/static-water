@@ -250,8 +250,8 @@ c   a: slope of the line(obstacle)
       double precision xl, yl, dx, dy, theta, a, y1, y2, y3, dis,x1
 
 c   m--column n--row
-      m = 128
-      n = 60
+      m = mmp
+      
       theta = pi/3
       a = tan((pi-theta)/2)
 
@@ -259,11 +259,12 @@ c   m--column n--row
       dx = xl/mmp
 c      dy = (y_maxgeom-y_mingeom)/n
       
-      mp = 40
+      n = int(m/2-0.04/dx)
+      mp = n-int(0.2/dx)
       np = int(n/a)
       qp = int((n-mp)/a)
       hp = 20
-      
+c      print *,qp      
 c      ntotal = m*(mp+np)-qp*(qp+1)/2
 c    geometry 1      
 c      do i = 1,qp
@@ -379,30 +380,31 @@ c            x(2,ntotal) = (n-mp)*dx+(2*a+1)*dx/2*sin((real(j)/hp)*pi)
 c          enddo
 
       else if(indis.eq.2) then
-       do i = 1,m
-        do j = 1,np
-         y1 = a*(i*dx-dx/2)+(n-mp)*dx-a*xl/2
-          y2 = a*(dx/2-i*dx)+(n-mp)*dx+a*xl/2
-c   distribution 3:another set of grid
+       do i = 1,m+1
+        do j = 1,np+2
+         y1 = a*(i*dx-dx)+(n-mp)*dx-a*xl/2
+          y2 = a*(dx-i*dx)+(n-mp)*dx+a*xl/2
+c   distribution 3:triangle grid
 c    . . . .
 c     . . .
 c    . . . .
-          if (a*(j-.5)*dx.gt.y1.or.a*(j-.5)*dx.gt.y2) then
+          if (a*(j-1)*dx.gt.y1.or.a*(j-1)*dx.gt.y2) then
             ntotal = ntotal + 1
-             x(1,ntotal) = x_mingeom+i*dx-dx/2
-             x(2,ntotal) = y_mingeom+a*(j-1)*dx+a*dx/2
+             x(1,ntotal) = x_mingeom+(i-1)*dx
+             x(2,ntotal) = y_mingeom+a*(j-1)*dx
+
           endif
          enddo
        enddo
 
-       do i = 1,m+1
+       do i = 1,m
         do j = 1,np+1
-          y1 = a*(i-1)*dx+(n-mp)*dx-a*xl/2
-           y2 = -a*(i-1)*dx+(n-mp)*dx+a*xl/2
-          if (a*(j-1)*dx.gt.y1.or.a*(j-1)*dx.gt.y2) then
+          y1 = a*(i-.5)*dx+(n-mp)*dx-a*xl/2
+           y2 = -a*(i-.5)*dx+(n-mp)*dx+a*xl/2
+          if (a*j*dx-a/2*dx.gt.y1.or.a*j*dx-a/2*dx.gt.y2) then
              ntotal = ntotal + 1
-             x(1,ntotal) = x_mingeom+(i-1)*dx
-             x(2,ntotal) = y_mingeom+a*(j-1)*dx
+             x(1,ntotal) = x_mingeom+i*dx-dx/2
+             x(2,ntotal) = y_mingeom+a*j*dx-a/2*dx
           endif
          enddo
         enddo
@@ -432,6 +434,8 @@ c  generate particles based on algebric grid--general method
       endif
 
       do i = 1,ntotal   
+        y1 = a*x(1,i)+(qp+1.5)*a*dx-a*xl/2
+        y2 = -a*x(1,i)+(qp+1.5)*a*dx+a*xl/2
         vx(1, i) = 0.
         vx(2, i) = 0.
 c--- original density,pressure & mass of the particles    
@@ -441,12 +445,16 @@ c--- hydrostatic pressure
 c        p(i) = 9.8*1000*(yl-x(2,i))
         rho(i) = 1000
         itype(i)  = 2
-c     low-density phase        
-c       if(x(1,i).gt.dx*m/2.or.x(2,i).gt.hp*dy)then
+c     mark those particles on the wall        
+       if((x(1,i).eq.x_mingeom).or.(x(2,i).eq.y_mingeom).or.(x(1,i).eq.
+     &   x_maxgeom).or.(x(1,i).le.xl/2.and.x(2,i).le.y1+1e-6).or.
+     &   (x(1,i).ge.xl/2.and.x(2,i).le.y2+1e-6)) then
 c           rho(i)= 250
-c           itype(i) = 3
-c        endif
+           itype(i) = 0
+        endif
         mass(i) = dx*dx*rho(i)
+c    in a triangle stencil, the volume of a particle has changed        
+c        if(indis.eq.2) mass(i) = mass(i)*a/4
         u(i) = 357.1
         hsml(i) = 1.3*dx
       enddo

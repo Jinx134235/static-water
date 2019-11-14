@@ -91,7 +91,7 @@ c     Determine range of grid to go through:
           minxcell(d) = max(dnxgcell(d),1)
           maxxcell(d) = min(dpxgcell(d),ngridx(d))
         enddo
-
+c       print *,itimestep
 c      if (i.eq.7350) print *,minxcell,maxxcell
 
 c     Search grid:
@@ -123,7 +123,6 @@ c     the interaction number for each particle
 C--- Kernel and derivations of kernel
  
                     call kernel(r,dx,hsml,w(niac),tdwdx)
-c                  if (i.eq.7380) print *,pair_j(niac)
                   do d = 1, dim
 	              dwdx(d,niac)=tdwdx(d)
 c                    if (niac.le.2) print *,d 

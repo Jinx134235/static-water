@@ -23,9 +23,9 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  1.28e0     ,
+      parameter ( x_maxgeom =  1.3e0     ,
      &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  .64e0     ,
+     &            y_maxgeom =  .65e0     ,
      &            y_mingeom =  0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
@@ -61,7 +61,8 @@ c     skf = 1, cubic spline kernel by W4 - Spline (Monaghan 1985)
 c         = 2, Gauss kernel   (Gingold and Monaghan 1981) 
 c         = 3, Quintic kernel (Morris 1997)
       integer skf 
-      parameter(skf = 1)
+      parameter(skf = 3)
+      
 
 c     Density filter
 c     filt = 0, no filter
@@ -69,16 +70,16 @@ c          = 1, Moltine & Clagrossi,2009
 c          = 2, Georgios,2019
 c          = 3, Antuono.etc,2010
       integer filt
-      parameter(filt = 0)
+      parameter(filt = 3)
  
-c     Geometry
+c     Geometry shape
 c     geom = 0, no geometry
 c          = 1, triangle wedge
 c          = 2, continous curve, like sin,exp,cubic
 c          = 3, half sphere
       integer geom
       parameter(geom = 1)
-c   
+
 c     Initital distribution
 c     indis = 0, standard distribution
 c           = 1, distribute according to wedge
@@ -124,7 +125,7 @@ c     shifting = .true. : shift algorithm
      &        mirror, gate, dummy, shifting
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .true. )
+      parameter ( average_velocity  = .false. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
@@ -133,7 +134,7 @@ c     shifting = .true. : shift algorithm
       parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
       parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .true. )            
+      parameter ( nor_density  = .false. )            
       parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
       parameter ( mirror = .true. )
@@ -158,14 +159,14 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 128 ) 
+     &            mmp = 65 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
 c    damp_t: damping time in damping technique     
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 2.42487e1,   
+     &            c0 = 3.637307e1,   
      &            damp_t = 0.2 )
 
 c    Switch for different benchmarks

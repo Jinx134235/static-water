@@ -69,8 +69,11 @@ c  particle indicating wedge height
       dx = xl/mmp
       a  = tan(pi/3)   
       b = c0**2*1000/7
+c  wall velocity (equals to 0 for no-slip wall)
       v_inf = 0.
+c  background pressure      
       kai = 0.
+c  damping function mignated on body-force       
       cita = 0.
        maxvel = 0.e0
       minvel = 1.e1
@@ -97,7 +100,8 @@ c  generate virtual particles
        else
          call virt_part(itimestep, ntotal,nvirt,hsml,mass,x,vx,
      &       rho,u,p,itype, nwall,mother)
-       endif   
+       endif  
+c      print *,p(ntotal+nvirt)  
 c      nwall = nwall   
       if(itimestep.eq.1)then
        open(13,file="../data/ini_virt.dat")
@@ -118,7 +122,8 @@ c     and optimzing smoothing length
       endif
      
       ntotalvirt = ntotal + nvirt + nwall 
-c     print *,ntotal,nvirt,nwall
+c      print *,ntotal,nvirt,nwall
+c      print *,x(1,10)
       if (nnps.eq.1) then 
         call direct_find(itimestep, ntotal,nvirt, hsml,x,niac,pair_i,
      &       pair_j,w,dwdx,ns)
@@ -127,7 +132,7 @@ c     print *,ntotal,nvirt,nwall
       else if (nnps.eq.2) then
         call link_list(itimestep, ntotalvirt, hsml(1),x,niac,pair_i,
      &       pair_j,w,dwdx,ns)
-       
+c        print *, ns(10)       
 c---   else if (nnps.eq.3) then 
 c       call tree_search(itimestep, ntotal+nvirt,hsml,x,niac,pair_i,
 c     &       pair_j,w,dwdx,ns)
@@ -153,9 +158,10 @@ c---  con_density: calculting density through continuity equation (4.31)/(4.34)
       else 
          do i = 1,ntotal
             rho(i)=rho(i)+dt*drho(i)
-c          if (i.eq.75)  print *,drho(i)
+c           if (i.eq.1)  print *,'drho(1):',drho(i)
             call p_art_water(rho(i),x(2,i),c(i),p(i))
-         enddo   
+            if(i.eq.1) print *,rho(i),p(i)
+             enddo   
       endif
 
       if (dummy) then
@@ -187,14 +193,14 @@ c           if(i.eq.ntotal+1) print *,nvx(1,i),sumw(i)
 c   pressure correction as well as density     
 c        b = c0**2*1000/7
         do i = ntotal+1,ntotal+nvirt
-           p(i) = p(mother(i))
+c           p(i) = p(mother(i))
 c           if(i.eq.ntotal+1) print *,p(i)
-           rho(i) = rho(mother(i))
-           if((x(2,i).lt.y_mingeom).or.(x(2,i).lt.a*x(1,i)-a*xl/2+nnp*dx
-     &    .and.x(2,i).lt.-a*x(1,i)+a*xl/2+nnp*dx)) then
+c           rho(i) = rho(mother(i))
+c           if((x(2,i).lt.y_mingeom).or.(x(2,i).lt.a*x(1,i)-a*xl/2+nnp*dx
+c     &    .and.x(2,i).lt.-a*x(1,i)+a*xl/2+nnp*dx)) then
            p(i) = p(mother(i))+9.8*1000*(x(2,mother(i))-x(2,i))
-           rho(i)= 1000*(p(i)/b+1)**(1/7)
-           endif
+           rho(i)= 1000*((p(i)-kai)/b+1)**(1/7)
+c           endif
          enddo
       endif
 c  Shepard filter
@@ -222,20 +228,20 @@ c---  Artificial viscosity:(4.66)
    
       
 c---  External forces:(4.93)
-         if (ex_force) call ext_force(ntotal,nvirt,nwall,mass,x,vx,niac,
+      if (ex_force) call ext_force(ntotal,nvirt,nwall,mass,x,vx,niac,
      &                  itype,pair_i,pair_j, hsml,maxvel, exdvxdt)
 
 c     Calculating the neighboring particles and undating HSML (4.80)/(4.81)
       
-         if (sle.ne.0) call h_upgrade(dt,ntotal, mass, vx, rho, niac, 
+      if (sle.ne.0) call h_upgrade(dt,ntotal, mass, vx, rho, niac, 
      &                   pair_i, pair_j, dwdx, hsml)
 c     Calculating artificial heat attached to the energy equation (4.74)
-         if (heat_artificial) call art_heat(ntotalvirt,hsml,
+      if (heat_artificial) call art_heat(ntotalvirt,hsml,
      &         mass,x,vx,niac,rho,u, c,pair_i,pair_j,w,dwdx,ahdudt)
      
 c     Calculating average velocity of each partile for avoiding penetration (4.92)
 
-         if (average_velocity) call av_vel(ntotal,mass,niac,pair_i,
+      if (average_velocity) call av_vel(ntotal,mass,niac,pair_i,
      &                           pair_j, w, vx, rho, av) 
 c---  Convert velocity, force, and energy to f and dfdt  
 c---  Correction for dummy particles(pressure & density)
@@ -245,7 +251,7 @@ c---  Correction for dummy particles(pressure & density)
           grap(d,i)=-grap(d,i)
 c          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
           enddo
-       enddo
+        enddo
 
         do k = 1, niac
            i = pair_i(k)
@@ -267,8 +273,7 @@ c         print *,pp(ntotal+1), egrd(ntotal+1),sumw(ntotal+1)
 c         print *,
 
         do i = ntotal+1,ntotal+nvirt
-          if(sumw(i).ne.0)then
-                  
+          if(sumw(i).ne.0)then                  
            p(i) = (pp(i)+egrd(i))/sumw(i)
 c      background pressure   
 c           kai = 1000*9.8*(y_maxgeom-x(2,i))
@@ -281,10 +286,10 @@ c      print *,ardvxdt(2,7555),ardvxdt(2,7556)
        endif
 
       do i=1,ntotal 
-       if(itype(i).gt.0) then
+c       if(itype(i).gt.0) then
         do d=1,dim
           dvx(d,i) = indvxdt(d,i) + exdvxdt(d,i) + ardvxdt(d,i)   
-c          if(i.eq.52.and.d.eq.dim) print *,indvxdt(d,i),exdvxdt(d,i)       
+c          if(i.eq.1.and.d.eq.dim) print *,grap(d,i),ardvxdt(d,i)       
         enddo
 c     gravity, damping technique(Adami,2012)
         if (self_gravity) then
@@ -304,13 +309,14 @@ c                cita = 4*(itimestep*dt/damp_t-1)**3+1
 c         if(abs(dvx(2,int(ntotal/2))).le.1e-7) print *,itimestep
           du(i) = du(i) + avdudt(i) + ahdudt(i)
            u(i) = u(i) + dt*du(i)
-        if(u(i).lt.0)  u(i) = 0.         
+          if(u(i).lt.0)  u(i) = 0.         
         do d = 1, dim                   
           vx(d, i) = vx(d, i) + dt * dvx(d, i) + av(d, i)
-c        if(i.eq.40) print *,dvx(d,i),av(d,i)
-          x(d, i) = x(d, i) + dt * vx(d, i)       
-        enddo
-       endif
+          if(itype(i).ne.0) then
+            x(d, i) = x(d, i) + dt * vx(d, i)       
+           endif
+         enddo
+c       endif
       enddo
 c      if(abs(dvx(2,int(ntotal/2))).le.1e-6) print *,itimestep
       if (shifting) then
@@ -337,7 +343,7 @@ c     keep the gate moving to a certain height
          do i = ntotal+nvirt-np*2+1,ntotal+nvirt
              x(2,i) = x(2,i) + dt*vx(2,i)
          enddo
-      endif
+       endif
 
 c     output data of virtual particles
       if (mod(itimestep,save_step).eq.0) then
@@ -363,7 +369,7 @@ c       open(30,file="../data/trace_p.dat")
 c          write(*,*) dvx(2,int(ntotal/2))
 c          write(*,101)'velocity(y)','internal(y)','total(y)'   
 c          write(*,100) x(1,maxi),x(2,maxi),vx(1,maxi),vx(2,maxi)
-c          write(*,*) '**** average velocity:', real(sumvel/ntotal)
+          write(*,*) '**** average velocity:', real(sumvel/ntotal)
 c           write(*,*) '**** particle moving slowest ****', mini         
 c         write(*,102)'velocity(y)','internal(y)','total(y)'   
 c          write(*,103)  x(1,mini),x(2,mini),vx(1,mini),vx(2,mini) 

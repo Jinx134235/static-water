@@ -110,18 +110,20 @@ c             mass(i) = 0
 c           endif
 c          enddo
 c        enddo
-       do i =1,4 
-c        if (mod(itimestep,print_step).eq.0) then
+c       do i =1,4 
+        if (mod(itimestep,print_step).eq.0) then
 c              p_record(1) = itimestep
-         if(itimestep.eq.step(i)) then
-c             i = itimestep/print_step 
+c         if(itimestep.eq.step(i)) then
+             i = itimestep/print_step 
              p_record(i) = p(1)
              v_record(1,i) = sumvel/ntotal
              v_record(2,i) = maxvel
+c          wavefront of dambreak
              x_record(1,i) = maxval(x(1,1:ntotal))/water_h
+c          waterheight of dambreak          
              x_record(2,i) = maxval(x(2,1:ntotal))/water_h
          endif
-       enddo
+c       enddo
 c        print *,vx(2,1)
 c        if (vx(2,1).gt.0) then
 c            print *,itimestep
@@ -145,16 +147,27 @@ c      endif
 
         if(itimestep.eq.nstart+maxtimestep) then
             open(20,file="../data/record.dat")
-c            do i =1,(nstart+maxtimestep)/print_step
+            do i =1,(nstart+maxtimestep)/print_step
 c                step = i*print_step
-            do i = 1,4
+c            do i = 1,4
               write(20,1002) i,p_record(i),v_record(1,i),v_record(2,i),
      &    x_record(1,i),x_record(2,i)
             enddo
 1002      format(1x, I6, 5(2x, e14.8))
           close(20)
                 
-c  extract pressure profile in wedge case
+c  extract pressure profile in wedge case, along the wedge
+c                    |
+c                    |
+cc                   |
+c                    |
+cc                   |
+c                    |
+c                     \  
+c                      \
+c                       \
+c                        \ 
+c                
          do i = 1,ntotal
            do j = 1,np
              dis = (x(1,i)-pro(1,j))**2+(x(2,i)-pro(2,j))**2

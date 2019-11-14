@@ -196,7 +196,7 @@ c      c = 29.32
          do d=2,dim
           vcc = vcc + dvx(d)*dwdx(d,k)
         enddo
-
+c         if(i.eq.1) print *,dvx(dim)
         drhodt(i) = drhodt(i) + mass(j)*vcc
         drhodt(j) = drhodt(j) + mass(i)*vcc
 c  add filter to the continuity equation

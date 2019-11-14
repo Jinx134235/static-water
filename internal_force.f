@@ -209,7 +209,7 @@ c        else
             h = -(p(i)/rho(i)**2 + p(j)/rho(j)**2)*dwdx(d,k) 
 c     Pressure gradient term
             grap(d,i) = grap(d,i) + mass(j)*h
-            grap(d,j) = grap(d,j) + mass(i)*h
+            grap(d,j) = grap(d,j) - mass(i)*h
 c     Viscous force
 
           if (visc) then             
