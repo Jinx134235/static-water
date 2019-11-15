@@ -23,10 +23,10 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  1.3e0     ,
-     &            x_mingeom =  0.e0     ,
-     &            y_maxgeom =  .65e0     ,
-     &            y_mingeom =  0.e0     ,
+      parameter ( x_maxgeom =  .6e0     ,
+     &            x_mingeom =  -0.6e0     ,
+     &            y_maxgeom =  .6e0     ,
+     &            y_mingeom =  -0.6e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
      &            damheight =  .15e0    ,
@@ -38,7 +38,7 @@ c     pa_sph = 2 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
 c              1 : (e.g. (p(i)/rho(i)**2+p(j)/rho(j)**2)
 c              3 : (e.g. (p(i)*rho(j)+p(j)*rho(i))/(rho(i)+rho(j))
       integer pa_sph 
-      parameter(pa_sph = 1)
+      parameter(pa_sph = 3)
 
 c     Nearest neighbor particle searching (nnps) method
 c     nnps = 1 : Simplest and direct searching
@@ -61,7 +61,7 @@ c     skf = 1, cubic spline kernel by W4 - Spline (Monaghan 1985)
 c         = 2, Gauss kernel   (Gingold and Monaghan 1981) 
 c         = 3, Quintic kernel (Morris 1997)
       integer skf 
-      parameter(skf = 3)
+      parameter(skf = 1)
       
 
 c     Density filter
@@ -78,7 +78,7 @@ c          = 1, triangle wedge
 c          = 2, continous curve, like sin,exp,cubic
 c          = 3, half sphere
       integer geom
-      parameter(geom = 1)
+      parameter(geom = 0)
 
 c     Initital distribution
 c     indis = 0, standard distribution
@@ -86,7 +86,7 @@ c           = 1, distribute according to wedge
 c           = 2, totally diffrent stencil
 c           = 3, body-fitted grid based on algerbic method
       integer indis
-      parameter(indis = 2)
+      parameter(indis = 0)
 
 c     Switches for different senarios
 
@@ -137,8 +137,8 @@ c     shifting = .true. : shift algorithm
       parameter ( nor_density  = .false. )            
       parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
-      parameter ( mirror = .true. )
-      parameter ( dummy = .false. )
+      parameter ( mirror = .false. )
+      parameter ( dummy = .true. )
       parameter ( shifting = .false. )
 
 c     Symmetry of the problem
@@ -159,7 +159,7 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 65 ) 
+     &            mmp = 120 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
@@ -176,9 +176,13 @@ c    cavity : share same data with static except the velocity of virtual par
 c    geometry : this contains different geometries for still water,
 c               dambreak and floating objects as well
 c    waterdrop : a small waterball fall onto steps or obstacles(Liu)
-      logical dambreak, static, geometry, waterdrop,cavity
+c    rotation : a cylinder rotation case for dummy boundary(Adami,2012)
+      logical dambreak, static, geometry, waterdrop,cavity,balloon,
+     &    rotation
       parameter ( dambreak = .false.)
       parameter ( static = .false.)
-      parameter ( geometry = .true.)
+      parameter ( geometry = .false.)
       parameter ( waterdrop = .false.)
       parameter ( cavity = .false.)
+      parameter ( balloon = .false.)
+      parameter ( rotation = .true.)

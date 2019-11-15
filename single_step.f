@@ -40,11 +40,11 @@ c     sumvel   :  Summation of velocity                            [out]
 c      common nvirt
       double precision w(max_interaction), dwdx(3,max_interaction),  
      &       indvxdt(dim,maxn),exdvxdt(dim,maxn),ardvxdt(dim,maxn),  
-     &       avdudt(maxn), ahdudt(maxn), c(maxn), eta(maxn),dis_x, 
-     &       dis_y, wi(maxn), nvx(dim,maxn),grap(dim,maxn),egrd(maxn)
+     &       avdudt(maxn), ahdudt(maxn), c(maxn), eta(maxn),dis, 
+     &        wi(maxn), nvx(dim,maxn),grap(dim,maxn),egrd(maxn)
       double precision x(dim,maxn),vx(dim,maxn),ddx(dim),dvx(dim,maxn),
-     &       av(dim,maxn), maxvel, b, minvel, vel,sumvel, norp,
-     &       kai,v_inf,cita,a,xl,dx, delta_r(dim,maxn)                          
+     &       av(dim,maxn), maxvel, b, minvel, vel,sumvel, norp(maxn),
+     &       kai,v_inf,cita,a,xl,dx, delta_r(dim,maxn),hv(dim),selfdens                          
      
 
       do i=1,maxn
@@ -58,9 +58,13 @@ c      common nvirt
           ardvxdt(d,i) = 0.
           exdvxdt(d,i) = 0.
           nvx(d,i) = 0.
-          grap(d,i) = 0.
+c          grap(d,i) = 0.
         enddo
-      enddo  
+      enddo 
+
+      hv = 0.
+      grap = 0. 
+      norp = 0.
 c  particle on gate
       np = 31
 c  particle indicating wedge height      
@@ -75,7 +79,7 @@ c  background pressure
       kai = 0.
 c  damping function mignated on body-force       
       cita = 0.
-       maxvel = 0.e0
+      maxvel = 0.e0
       minvel = 1.e1
       sumvel = 0.e0
 c  velocity statistic
@@ -137,33 +141,8 @@ c---   else if (nnps.eq.3) then
 c       call tree_search(itimestep, ntotal+nvirt,hsml,x,niac,pair_i,
 c     &       pair_j,w,dwdx,ns)
       endif         
-c---  Density approximation or change rate
-c---  summation_density:(4.26)
-c---  con_density: calculting density through continuity equation (4.31)/(4.34)      
-      if(dummy)then 
-         do i = 1,nvirt
-           vx(1,ntotal+i) = v_inf
-           vx(2,ntotal+i) = v_inf
-         enddo
-      endif
-
-      call con_density(ntotalvirt,mass,niac,pair_i,pair_j,
-     &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
-   
-      if (dynamic) then
-         do i = 1,ntotal+nvirt
-           rho(i)=rho(i)+dt*drho(i)
-           call p_art_water(rho(i),x(2,i),c(i),p(i))
-         enddo
-      else 
-         do i = 1,ntotal
-            rho(i)=rho(i)+dt*drho(i)
-c           if (i.eq.1)  print *,'drho(1):',drho(i)
-            call p_art_water(rho(i),x(2,i),c(i),p(i))
-            if(i.eq.1) print *,rho(i),p(i)
-             enddo   
-      endif
-
+c---  Dummy boundary: extrapolation for velcity
+c---  rotation also contained through transfer of axes  
       if (dummy) then
         do k = 1,niac
             i = pair_i(k)
@@ -182,7 +161,38 @@ c           if(i.eq.ntotal+1) print *,nvx(1,i),sumw(i)
              vx(d,i) = 2*v_inf-nvx(d,i)/sumw(i)
              endif
            enddo
+c     rotating cylinder, the angular velcity of the wall is 10pi/3 as default
+            if(rotation) then
+                if(itimestep*dt.ge.damp_t.and.itimestep*dt.le.0.5) then
+                 dis = sqrt(x(1,i)**2+x(2,i)**2)                  
+                 v_inf = 10*pi/3*dis
+                  vx(1,i) = -x(2,i)/dis*v_inf
+                  vx(2,i) = x(1,i)/dis*v_inf
+                  x(1,i) = x(1,i)+vx(1,i)*dt
+                  x(2,i) = x(2,i)+vx(2,i)*dt
+                endif
+            endif
+
          enddo
+      endif
+  
+c---  con_density: calculting density through continuity equation (4.31)/(4.34)      
+
+      call con_density(ntotalvirt,mass,niac,pair_i,pair_j,
+     &       hsml,w,dwdx,vx,itype,x,rho,wi,drho)
+   
+      if (dynamic) then
+         do i = 1,ntotal+nvirt
+           rho(i)=rho(i)+dt*drho(i)
+           call p_art_water(rho(i),x(2,i),c(i),p(i))
+         enddo
+      else 
+         do i = 1,ntotal
+            rho(i)=rho(i)+dt*drho(i)
+c           if (i.eq.1)  print *,'drho(1):',drho(i)
+            call p_art_water(rho(i),x(2,i),c(i),p(i))
+c            if(i.eq.1) print *,rho(i),p(i)
+         enddo   
       endif
 
       if(mirror) then
@@ -201,6 +211,24 @@ c     &    .and.x(2,i).lt.-a*x(1,i)+a*xl/2+nnp*dx)) then
            p(i) = p(mother(i))+9.8*1000*(x(2,mother(i))-x(2,i))
            rho(i)= 1000*((p(i)-kai)/b+1)**(1/7)
 c           endif
+         enddo
+
+c  correct pressure for mirror particles
+         do k = 1,niac
+            i = pair_i(k)
+            j = pair_j(k)            
+           if(itype(i).eq.0)then
+c              call kernel(0,hv,hsml(i),selfdens,hv)
+              p(i) = p(i) + p(j)*w(k)
+              norp(i) = norp(i) + w(k)
+           endif
+         enddo
+
+         do i = 1,ntotal
+           if(itype(i).eq.0)then
+           p(i) = p(i)/norp(i)         
+            rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
+           endif
          enddo
       endif
 c  Shepard filter
@@ -281,8 +309,6 @@ c           kai = 1000*9.8*(y_maxgeom-x(2,i))
           endif
          enddo
 
-c      print *,indvxdt(2,7555),indvxdt(2,7556)
-c      print *,ardvxdt(2,7555),ardvxdt(2,7556)
        endif
 
       do i=1,ntotal 

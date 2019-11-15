@@ -56,6 +56,9 @@ c select cases --updating..
      &                      itype, hsml, ntotal)
       if(waterdrop) call water_fall(x,vx, mass,rho, p, u,
      &                      itype, hsml ,ntotal)
+      if(rotation) call cylinder_rotate(x,vx, mass,rho, p, u,
+     &                      itype, hsml ,ntotal)
+
 c  dump data      
       do i = 1, ntotal 
           write(11,1001) i, (x(d, i),d = 1, dim), (vx(d, i),d = 1, dim) 
@@ -445,7 +448,7 @@ c--- hydrostatic pressure
 c        p(i) = 9.8*1000*(yl-x(2,i))
         rho(i) = 1000
         itype(i)  = 2
-c     mark those particles on the wall        
+c     mark wall particles         
        if((x(1,i).eq.x_mingeom).or.(x(2,i).eq.y_mingeom).or.(x(1,i).eq.
      &   x_maxgeom).or.(x(1,i).le.xl/2.and.x(2,i).le.y1+1e-6).or.
      &   (x(1,i).ge.xl/2.and.x(2,i).le.y2+1e-6)) then
@@ -454,7 +457,7 @@ c           rho(i)= 250
         endif
         mass(i) = dx*dx*rho(i)
 c    in a triangle stencil, the volume of a particle has changed        
-c        if(indis.eq.2) mass(i) = mass(i)*a/4
+        if(indis.eq.2) mass(i) = mass(i)*a/4
         u(i) = 357.1
         hsml(i) = 1.3*dx
       enddo
@@ -518,3 +521,68 @@ c        p(i) = 9.8*1000*(yl-x(2,i))
       enddo
 
       end
+
+      subroutine cylinder_rotate(x, vx, mass, rho, p, u,
+     &           itype, hsml, ntotal)
+c-----------------------------------------------------------------
+c   a dynamic testcase where a cylinder is rotating with a fixed
+c   velocity, it may contain some objects like a floating block or
+c   some obsatcles on the inner wall
+
+c                           oooo
+c               ^        o        o       |
+c               |      o            o     |
+c               |     o              o    |
+c               |    o                o   |  omega=1.0
+c               |    o -------------- o   |
+c               |     o  ----------  o    |
+c               |      o  --------  o     v
+c                        o  ----  o
+c                           oooo 
+
+        implicit none
+        include 'param.inc'
+
+        integer itype(maxn), ntotal
+        double precision x(dim, maxn), vx(dim, maxn), mass(maxn),
+     &     rho(maxn), p(maxn), u(maxn), hsml(maxn)
+        integer i, j, d,mp, np
+        double precision xl, yl, dx, dy, xo, yo,rr, hh,dd,x1,y1
+       
+c   coordinate of center and the cylinder radius       
+        xo = 0.
+        yo = 0.
+        rr = 0.5
+        xl = x_maxgeom -x_mingeom
+        dx = xl/mmp
+        mp = mmp
+        np = mmp
+c   height of the fluid domain        
+        hh = 0.4
+
+        do i = 1,mp
+          do j = 1,np
+             x1 = x_mingeom+i*dx
+             y1 = y_mingeom+j*dx
+             dd = sqrt((x1-xo)**2+(y1-yo)**2)
+             if(dd.lt.rr.and.y1.le.y_mingeom+hh)then
+                  ntotal = ntotal + 1
+                  x(1,ntotal) = x1
+                  x(2,ntotal) = y1
+                  vx(1,ntotal) = 0
+                  vx(2,ntotal) = 0
+              endif
+           enddo
+          enddo  
+          
+          do i  =1,ntotal
+         
+            itype(i) = 2
+            rho(i) = 1000
+            p(i) = 0
+            mass(i) = rho(i)*dx*dx
+            hsml(i) = 1.3*dx
+            u(i) = 357.1          
+          enddo
+
+        end
