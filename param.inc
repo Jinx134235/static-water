@@ -23,10 +23,10 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  .6e0     ,
-     &            x_mingeom =  -0.6e0     ,
-     &            y_maxgeom =  .6e0     ,
-     &            y_mingeom =  -0.6e0     ,
+      parameter ( x_maxgeom =  .4e0     ,
+     &            x_mingeom =  -0.e0     ,
+     &            y_maxgeom =  .4e0     ,
+     &            y_mingeom =  -0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
      &            damheight =  .15e0    ,
@@ -38,7 +38,7 @@ c     pa_sph = 2 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
 c              1 : (e.g. (p(i)/rho(i)**2+p(j)/rho(j)**2)
 c              3 : (e.g. (p(i)*rho(j)+p(j)*rho(i))/(rho(i)+rho(j))
       integer pa_sph 
-      parameter(pa_sph = 3)
+      parameter(pa_sph = 1)
 
 c     Nearest neighbor particle searching (nnps) method
 c     nnps = 1 : Simplest and direct searching
@@ -70,7 +70,7 @@ c          = 1, Moltine & Clagrossi,2009
 c          = 2, Georgios,2019
 c          = 3, Antuono.etc,2010
       integer filt
-      parameter(filt = 3)
+      parameter(filt = 0)
  
 c     Geometry shape
 c     geom = 0, no geometry
@@ -125,20 +125,20 @@ c     shifting = .true. : shift algorithm
      &        mirror, gate, dummy, shifting
 
       parameter ( summation_density  = .false. )
-      parameter ( average_velocity  = .false. )
+      parameter ( average_velocity  = .true. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
-      parameter ( visc  = .false. )
-      parameter ( ex_force  = .false.)
-      parameter ( visc_artificial  = .true. )
+      parameter ( visc  = .true. )
+      parameter ( ex_force  = .true.)
+      parameter ( visc_artificial  = .false. )
       parameter ( heat_artificial  = .false. )
-      parameter ( self_gravity  = .true. )      
-      parameter ( nor_density  = .false. )            
+      parameter ( self_gravity  = .false. )      
+      parameter ( nor_density  = .true. )            
       parameter ( dynamic = .false. )
       parameter ( gate = .false.  )
       parameter ( mirror = .false. )
-      parameter ( dummy = .true. )
+      parameter ( dummy = .false. )
       parameter ( shifting = .false. )
 
 c     Symmetry of the problem
@@ -159,7 +159,7 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 120 ) 
+     &            mmp = 40 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
@@ -167,22 +167,23 @@ c    damp_t: damping time in damping technique
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
      &            c0 = 3.637307e1,   
-     &            damp_t = 0.2 )
+     &            damp_t = 0 )
 
 c    Switch for different benchmarks
 c    dambreak : this is the test case from Crespo (2008)
 c    static : this simulates both static water&cavity flow in a square tank
-c    cavity : share same data with static except the velocity of virtual par
-c    geometry : this contains different geometries for still water,
-c               dambreak and floating objects as well
+c    cavity : share same data with static except the velocity at top
+c    geometry : special tank with wedge at bottom for still water, dambreak
 c    waterdrop : a small waterball fall onto steps or obstacles(Liu)
 c    rotation : a cylinder rotation case for dummy boundary(Adami,2012)
+c    multiphase : a solid-liquid coupled dambreak case using DEM-SPH(Darius,2017)
       logical dambreak, static, geometry, waterdrop,cavity,balloon,
-     &    rotation
+     &    rotation, multiphase
       parameter ( dambreak = .false.)
-      parameter ( static = .false.)
+      parameter ( static = .true.)
       parameter ( geometry = .false.)
       parameter ( waterdrop = .false.)
-      parameter ( cavity = .false.)
+      parameter ( cavity = .true.)
       parameter ( balloon = .false.)
-      parameter ( rotation = .true.)
+      parameter ( rotation = .false.)
+      parameter ( multiphase = .false.)

@@ -187,18 +187,20 @@ c      c = 29.32
         r = 0.
         i = pair_i(k)
         j = pair_j(k)
-        do d=1,dim
-          dvx(d) = vx(d,i) - vx(d,j) 
-          dx(d) = x(d,i) - x(d,j)
-          r = r+dx(d)**2
-        enddo
-        vcc = dvx(1)*dwdx(1,k) 
+c        if(itype(j).gt.0)then
+         do d=1,dim
+           dvx(d) = vx(d,i) - vx(d,j) 
+           dx(d) = x(d,i) - x(d,j)
+           r = r+dx(d)**2
+         enddo
+          vcc = dvx(1)*dwdx(1,k) 
          do d=2,dim
           vcc = vcc + dvx(d)*dwdx(d,k)
-        enddo
+         enddo
 c         if(i.eq.1) print *,dvx(dim)
-        drhodt(i) = drhodt(i) + mass(j)*vcc
-        drhodt(j) = drhodt(j) + mass(i)*vcc
+         drhodt(i) = drhodt(i) + mass(j)*vcc
+         drhodt(j) = drhodt(j) + mass(i)*vcc
+c        endif
 c  add filter to the continuity equation
 c  molteni        
         if (filt.eq.1) then
@@ -237,6 +239,11 @@ c  antuono(delta-sph)
          call antuono_filter(ntotal,mass,niac,pair_i,pair_j,hsml,w,
      &  dwdx,drhodt,x, itype,vx,rho,wi)
        endif
+
+c       do i = 1,ntotal
+c         drhodt(i) = drhodt(i)*rho(i)
+c       enddo
+
       end
 
 

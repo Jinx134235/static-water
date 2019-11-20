@@ -63,14 +63,10 @@ c    timepoint for output and observation in dambreak
           av(d, i) = 0.
         enddo
       enddo  
-c   distribute profile points     
+   
       do j = 1,np
-        if (j.le.20) then
-           pro(1,j) =xl/2+.2/sqrt(.3)-j*xl/mmp/sqrt(.3)
-        else
-           pro(1,j) = xl/2
-        endif
-        pro(2,j) = j*xl/mmp
+        pro(1,j) = 0.
+        pro(2,j) = 0.
         pro(3,j) = 0.
         pro(4,j) = 0.
       enddo
@@ -146,15 +142,15 @@ c      endif
         time = time + dt
 
         if(itimestep.eq.nstart+maxtimestep) then
-            open(20,file="../data/record.dat")
+            open(21,file="../data/record.dat")
             do i =1,(nstart+maxtimestep)/print_step
 c                step = i*print_step
 c            do i = 1,4
-              write(20,1002) i,p_record(i),v_record(1,i),v_record(2,i),
+              write(21,1002) i,p_record(i),v_record(1,i),v_record(2,i),
      &    x_record(1,i),x_record(2,i)
             enddo
 1002      format(1x, I6, 5(2x, e14.8))
-          close(20)
+          close(21)
                 
 c  extract pressure profile in wedge case, along the wedge
 c                    |
@@ -167,7 +163,16 @@ c                     \
 c                      \
 c                       \
 c                        \ 
-c                
+c       
+       if(geometry)then
+        do j =1,np 
+         if (j.le.20) then
+           pro(1,j) =xl/2+.2/sqrt(.3)-j*xl/mmp/sqrt(.3)
+         else
+           pro(1,j) = xl/2
+         endif
+         pro(2,j) = j*xl/mmp
+         enddo
          do i = 1,ntotal
            do j = 1,np
              dis = (x(1,i)-pro(1,j))**2+(x(2,i)-pro(2,j))**2
@@ -178,7 +183,7 @@ c
              if (dis.lt.scale_k*hsml(i))then
                 call kernel(dis,dxiac,hsml(i),wij,hv)
                  pro(3,j) = pro(3,j)+p(i)*wij
-                 pro(4,j) = pro(4,j)+wij
+                  pro(4,j) = pro(4,j)+wij
              endif
            enddo
           enddo
@@ -187,14 +192,56 @@ c
             pro(3,i) = pro(3,i)/pro(4,i)
           enddo
 
-          open(30,file="../data/pre_pro.dat")
+          open(32,file="../data/pre_pro.dat")
             do i = 1,np
-              write(30,1003) i,pro(1,i),pro(2,i),pro(3,i)
+              write(32,1003) i,pro(1,i),pro(2,i),pro(3,i)
             enddo
 1003      format(1x, I6, 3(2x, e14.8))
-          close(30)
-
+          close(32)
          endif
+c  extract velocity profile in cavity case, central line in
+c  both  x-&y-directions
+         if(cavity) then
+c  reassign profile points            
+           do i = 1,mmp
+              pro(1,i) = x_mingeom+(i-1)*xl/mmp
+              pro(2,i) = xl/2
+           enddo
+           do i = mmp+1,2*mmp
+              pro(1,i) = xl/2
+              pro(2,i) = y_mingeom+(i-mmp)*xl/mmp
+           enddo
+
+           do i = 1,ntotal
+             do j = 1,2*mmp
+               dis = sqrt((x(1,i)-pro(1,j))**2+(x(2,i)-pro(2,j))**2)
+               if(dis.lt.scale_k*hsml(i)) then               
+                do d = 1,dim
+                 dxiac(d) = x(d,i) - pro(d,j)
+                enddo
+                call kernel(dis,dxiac,hsml(i),wij,hv)
+                  if(j.le.mmp) then
+                     pro(3,j) = pro(3,j)+vx(2,i)*wij
+                     pro(4,j) = pro(4,j)+wij
+                   else
+                     pro(3,j) = pro(3,j)+vx(1,i)*wij
+                     pro(4,j) = pro(4,j)+wij
+                   endif
+                endif
+             enddo
+            enddo
+
+            do i = 1,2*mmp
+               pro(3,i) = pro(3,i)/pro(4,i)
+            enddo
+          open(43,file="../data/vel_pro.dat") 
+            do i = 1,2*mmp
+              write(43,1004) i,pro(1,i),pro(2,i),pro(3,i)
+            enddo
+1004      format(1x, I6, 3(2x, e14.8))
+          close(43)
+         endif
+        endif
 
 	if (mod(itimestep,save_step).eq.0) then
           call output(x, vx, mass, rho, p, u, c, itype, hsml, ntotal)

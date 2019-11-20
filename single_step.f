@@ -33,32 +33,27 @@ c     sumvel   :  Summation of velocity                            [out]
      &        nstart, np,nnp
       double precision dt, hsml(maxn), mass(maxn), u(maxn), s(maxn), 
      &        rho(maxn), p(maxn),  t(maxn), tdsdt(maxn), du(maxn),
-     &        ds(maxn), drho(maxn), pp(maxn),sumw(maxn)
+     &        ds(maxn), drho(maxn),sum_w(maxn)
       integer i, d,j,k,nvirt, niac, pair_i(max_interaction),mini,
      &        pair_j(max_interaction), ns(maxn), nwall, maxi,ntotalvirt,
      &         mother(maxn)
-c      common nvirt
       double precision w(max_interaction), dwdx(3,max_interaction),  
      &       indvxdt(dim,maxn),exdvxdt(dim,maxn),ardvxdt(dim,maxn),  
      &       avdudt(maxn), ahdudt(maxn), c(maxn), eta(maxn),dis, 
-     &        wi(maxn), nvx(dim,maxn),grap(dim,maxn),egrd(maxn)
-      double precision x(dim,maxn),vx(dim,maxn),ddx(dim),dvx(dim,maxn),
+     &        wi(maxn), nvx(dim,maxn),grap(dim,maxn)
+      double precision x(dim,maxn),vx(dim,maxn),dvx(dim,maxn),
      &       av(dim,maxn), maxvel, b, minvel, vel,sumvel, norp(maxn),
-     &       kai,v_inf,cita,a,xl,dx, delta_r(dim,maxn),hv(dim),selfdens                          
+     &       cita,a,xl,dx, delta_r(dim,maxn),hv(dim),selfdens                          
      
 
       do i=1,maxn
         avdudt(i) = 0.
         ahdudt(i) = 0.
-        sumw(i) = 0.
-        pp(i) = 0.
-        egrd(i) = 0.
+c        sum_w(i) = 0.
         do  d=1,dim
           indvxdt(d,i) = 0.
           ardvxdt(d,i) = 0.
           exdvxdt(d,i) = 0.
-          nvx(d,i) = 0.
-c          grap(d,i) = 0.
         enddo
       enddo 
 
@@ -72,11 +67,11 @@ c  particle indicating wedge height
       xl = x_maxgeom-x_mingeom
       dx = xl/mmp
       a  = tan(pi/3)   
-      b = c0**2*1000/7
+c      b = c0**2*1000/7
 c  wall velocity (equals to 0 for no-slip wall)
-      v_inf = 0.
+c      v_inf = 0.
 c  background pressure      
-      kai = 0.
+c      kai = 0.
 c  damping function mignated on body-force       
       cita = 0.
       maxvel = 0.e0
@@ -143,39 +138,6 @@ c     &       pair_j,w,dwdx,ns)
       endif         
 c---  Dummy boundary: extrapolation for velcity
 c---  rotation also contained through transfer of axes  
-      if (dummy) then
-        do k = 1,niac
-            i = pair_i(k)
-            j = pair_j(k)
-            if (itype(j).lt.0.and.itype(i).gt.0)then
-              do d= 1,dim
-                nvx(d,j) = nvx(d,j)+vx(d,i)*w(k)
-              enddo
-              sumw(j) = sumw(j)+w(k)
-            endif
-         enddo
-         do i = ntotal+1,ntotal+nvirt
-c           if(i.eq.ntotal+1) print *,nvx(1,i),sumw(i)
-           do d = 1,dim
-             if (sumw(i).ne.0)then
-             vx(d,i) = 2*v_inf-nvx(d,i)/sumw(i)
-             endif
-           enddo
-c     rotating cylinder, the angular velcity of the wall is 10pi/3 as default
-            if(rotation) then
-                if(itimestep*dt.ge.damp_t.and.itimestep*dt.le.0.5) then
-                 dis = sqrt(x(1,i)**2+x(2,i)**2)                  
-                 v_inf = 10*pi/3*dis
-                  vx(1,i) = -x(2,i)/dis*v_inf
-                  vx(2,i) = x(1,i)/dis*v_inf
-                  x(1,i) = x(1,i)+vx(1,i)*dt
-                  x(2,i) = x(2,i)+vx(2,i)*dt
-                endif
-            endif
-
-         enddo
-      endif
-  
 c---  con_density: calculting density through continuity equation (4.31)/(4.34)      
 
       call con_density(ntotalvirt,mass,niac,pair_i,pair_j,
@@ -209,7 +171,7 @@ c           rho(i) = rho(mother(i))
 c           if((x(2,i).lt.y_mingeom).or.(x(2,i).lt.a*x(1,i)-a*xl/2+nnp*dx
 c     &    .and.x(2,i).lt.-a*x(1,i)+a*xl/2+nnp*dx)) then
            p(i) = p(mother(i))+9.8*1000*(x(2,mother(i))-x(2,i))
-           rho(i)= 1000*((p(i)-kai)/b+1)**(1/7)
+           rho(i)= 1000*(p(i)/b+1)**(1/7)
 c           endif
          enddo
 
@@ -227,7 +189,7 @@ c              call kernel(0,hv,hsml(i),selfdens,hv)
          do i = 1,ntotal
            if(itype(i).eq.0)then
            p(i) = p(i)/norp(i)         
-            rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
+            rho(i) = 1000*(p(i)/b+1)**(1/7)
            endif
          enddo
       endif
@@ -235,7 +197,10 @@ c  Shepard filter
        if (dynamic.and.mod(itimestep,30).eq.0) then
          call sum_density(ntotalvirt,hsml,mass,niac,pair_i,pair_j,w,
      &        itype,rho)
-       endif
+        endif
+
+      if (dummy) call dummy_velocity(ntotal,nvirt,pair_i,pair_j,niac,w,
+     &      itype,sum_w,dt,itimestep,x,vx)
 
 c---  Dynamic viscosity:
 
@@ -273,43 +238,8 @@ c     Calculating average velocity of each partile for avoiding penetration (4.9
      &                           pair_j, w, vx, rho, av) 
 c---  Convert velocity, force, and energy to f and dfdt  
 c---  Correction for dummy particles(pressure & density)
-       if(dummy) then
-        do i = 1,ntotal
-          do d = 1,dim
-          grap(d,i)=-grap(d,i)
-c          if(d.eq.dim) grap(d,i)= grap(d,i)+9.8
-          enddo
-        enddo
-
-        do k = 1, niac
-           i = pair_i(k)
-           j = pair_j(k)
-           if (itype(j).lt.0.and.itype(i).gt.0) then
-
-             pp(j) = pp(j) + p(i)*w(k)
-             do d= 1,dim
-               ddx(d) = x(d,j)-x(d,i)
-             egrd(j) = egrd(j)+rho(i)*ddx(d)*grap(d,i)*w(k)
-c  print the process of summation for debug
-c             if(itimestep.eq.100.and.j.eq.ntotal+1)then 
-c                print *,rho(i),dx(d),grap(d,i),w(k)    
-              enddo
-            endif
-        enddo
-c       if(mod(itimestep,print_step).eq.0)then
-c         print *,pp(ntotal+1), egrd(ntotal+1),sumw(ntotal+1)
-c         print *,
-
-        do i = ntotal+1,ntotal+nvirt
-          if(sumw(i).ne.0)then                  
-           p(i) = (pp(i)+egrd(i))/sumw(i)
-c      background pressure   
-c           kai = 1000*9.8*(y_maxgeom-x(2,i))
-           rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
-          endif
-         enddo
-
-       endif
+      if (dummy) call dummy_pressure(ntotal,nvirt,pair_i,pair_j,niac,
+     &                grap,w,sum_w,x,p,rho)
 
       do i=1,ntotal 
 c       if(itype(i).gt.0) then
@@ -358,7 +288,7 @@ c      if(abs(dvx(2,int(ntotal/2))).le.1e-6) print *,itimestep
                vx(d,i) = vx(d,i)+dvx(d,i)*delta_r(d,i)
                p(i) = p(i)+grap(d,i)*delta_r(d,i)
             enddo
-            rho(i) = 1000*((p(i)-kai)/b+1)**(1/7)
+            rho(i) = 1000*(p(i)/b+1)**(1/7)
          enddo
 
        endif

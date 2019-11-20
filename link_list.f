@@ -35,7 +35,7 @@ c     3-dim. problem: maxngx = maxngy = maxngz ~ maxn^(1/3)
      &            maxngz  = 1          )      
       integer itimestep, ntotal, niac, pair_i(max_interaction),
      &        pair_j(max_interaction), countiac(maxn)
-      double precision hsml, x(dim,maxn),w(max_interaction), sumw,
+      double precision hsml, x(dim,maxn),w(max_interaction),
      &        dwdx(3,max_interaction) 
       integer i, j, d, scale_k, sumiac, maxiac, noiac, miniac, maxp,minp    
       integer grid(maxngx,maxngy,maxngz),xgcell(3,maxn),gcell(3),

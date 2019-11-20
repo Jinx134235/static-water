@@ -32,8 +32,8 @@ c     e-- total energy of particles                                [out]
       call input(x, vx, mass, rho, p, u, itype, hsml, ntotal)     
 c     timestep according to CFL condition, crount number =0.2
       
-c       dt = 5.e-5 
-       dt = 0.2*hsml(1)/c0
+       dt = 5.e-5 
+c       dt = 0.2*hsml(1)/c0
       
       write(*,*)'timestep(s):', real(dt)
   1   write(*,*)'  ***************************************************' 

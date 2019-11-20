@@ -558,7 +558,7 @@ c   coordinate of center and the cylinder radius
         mp = mmp
         np = mmp
 c   height of the fluid domain        
-        hh = 0.4
+        hh = 0.6
 
         do i = 1,mp
           do j = 1,np

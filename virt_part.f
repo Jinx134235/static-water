@@ -119,8 +119,8 @@ c    downside
         if ((x(2,i).gt.y_mingeom+1e-4).and.
      &    (x(2,i).lt.y_mingeom+scale_k*hsml(i)))then
 
-          if ((x(2,i).le.a*x(1,i)-a*corner(1,4)).or.
-     &    (x(2,i).le.-a*x(1,i)+a*corner(1,3)))  then
+c          if ((x(2,i).le.a*x(1,i)-a*corner(1,4)).or.
+c     &    (x(2,i).le.-a*x(1,i)+a*corner(1,3)))  then
 c          if(x(1,i).lt.corner(1,3).or.x(1,i).gt.corner(1,4))then
            nvirt=nvirt+1
            x(1, ntotal + nvirt) = x(1,i)
@@ -129,7 +129,7 @@ c          if(x(1,i).lt.corner(1,3).or.x(1,i).gt.corner(1,4))then
            vx(2, ntotal + nvirt) = -vx(2,i)
            mother(ntotal + nvirt)=i
            ocn(i) = ocn(i)+1
-           endif
+c           endif
         endif
 c   leftside
         if ((x(1,i).gt.x_mingeom).and.
@@ -169,13 +169,13 @@ c            if (i.eq.ntotal+100) print *,p(i)
             rho(i)=rho(mother(i))
             u(i)=u(mother(i))
 c     over creation performed on particle's mass         
-           if(ocn(mother(i)).gt.1)then
-              mass(i)=mass(mother(i))/(ocn(mother(i)))
+c           if(ocn(mother(i)).gt.1)then
+c              mass(i)=mass(mother(i))/(ocn(mother(i)))
 c              print *,i,ocn(mother(i)),mass(mother(i)),mass(i)
-            else
+c            else
               mass(i)=mass(mother(i))
-            endif
-           if(i.eq.ntotal+1) print *,i,ocn(mother(i))
+c            endif
+c           if(i.eq.ntotal+1) print *,i,ocn(mother(i))
          enddo
        endif
       endif   
@@ -184,12 +184,12 @@ c     Monaghan type virtual particle(repulsive force)
       if(ex_force) then
 c     Lower side              
         do i = 1, 2*mp+1
-          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
-     &   nnp*dx/a)then
+c          if ((i-1)*dx/2.le.xl/2-nnp*dx/a.or.(i-1)*dx/2.ge.xl/2+
+c     &   nnp*dx/a)then
            nwall = nwall + 1
            x(1, ntotal + nvirt + nwall) = x_mingeom+(i-1)*dx/2
            x(2, ntotal + nvirt + nwall) = y_mingeom
-         endif
+c         endif
        enddo
 c      if(itimestep.eq.1) then
         do i = 1, np*2
