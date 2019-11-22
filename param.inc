@@ -23,15 +23,15 @@ c     z_mingeom : Lower limit of allowed z-regime
       double precision x_maxgeom,x_mingeom,y_maxgeom,
      &                 y_mingeom,z_maxgeom,z_mingeom,
      &                 damheight,damlength,bedheight
-      parameter ( x_maxgeom =  .4e0     ,
+      parameter ( x_maxgeom =  1.5e0     ,
      &            x_mingeom =  -0.e0     ,
-     &            y_maxgeom =  .4e0     ,
+     &            y_maxgeom =  .5e0     ,
      &            y_mingeom =  -0.e0     ,
      &            z_maxgeom =  10.e0     ,
      &            z_mingeom = -10.e0     ,
      &            damheight =  .15e0    ,
      &            damlength =  .38e0    ,
-     &            bedheight =  0.e0    )
+     &            bedheight =  1.8e-2    )
     
 c     SPH algorithm for particle approximation (pa_sph)
 c     pa_sph = 2 : (e.g. (p(i)+p(j))/(rho(i)*rho(j))
@@ -118,28 +118,30 @@ c     gate = .true. : add moving gate in the dambreak simulation,only
 c                     for dynamic
 c     dummy = .true. : dummy boundary
 c     shifting = .true. : shift algorithm
+c     variable_dt = .true. : variable timestep proposed by Monaghan(1999)
 
       logical summation_density, average_velocity, config_input,
      &        virtual_part, vp_input, visc, ex_force, heat_artificial,
      &        visc_artificial, self_gravity, nor_density, dynamic,
-     &        mirror, gate, dummy, shifting
+     &        mirror, gate, dummy, shifting, variable_dt
 
       parameter ( summation_density  = .false. )
       parameter ( average_velocity  = .true. )
       parameter ( config_input  = .false. )
       parameter ( virtual_part  = .true. )
       parameter ( vp_input  = .false.)
-      parameter ( visc  = .true. )
-      parameter ( ex_force  = .true.)
-      parameter ( visc_artificial  = .false. )
+      parameter ( visc  = .false. )
+      parameter ( ex_force  = .false.)
+      parameter ( visc_artificial  = .true. )
       parameter ( heat_artificial  = .false. )
-      parameter ( self_gravity  = .false. )      
+      parameter ( self_gravity  = .true. )      
       parameter ( nor_density  = .true. )            
-      parameter ( dynamic = .false. )
+      parameter ( dynamic = .true. )
       parameter ( gate = .false.  )
       parameter ( mirror = .false. )
       parameter ( dummy = .false. )
       parameter ( shifting = .false. )
+      parameter ( variable_dt = .false. )
 
 c     Symmetry of the problem
 c     nsym = 0 : no symmetry,
@@ -159,14 +161,14 @@ c     mmp: The particle number in each direction(equal in a square tank)
       integer print_step, save_step, mmp
       parameter ( print_step = 100,
      &            save_step = 1 ,
-     &            mmp = 40 ) 
+     &            mmp = 300 ) 
 
 c    Some constant
 c    c0: sound speed according to a*sqrt(g*h),a:10~20
 c    damp_t: damping time in damping technique     
       double precision pi,c0,damp_t
       parameter ( pi = 3.14159265358979323846,
-     &            c0 = 3.637307e1,   
+     &            c0 = 1.21243e1,   
      &            damp_t = 0 )
 
 c    Switch for different benchmarks
@@ -179,11 +181,11 @@ c    rotation : a cylinder rotation case for dummy boundary(Adami,2012)
 c    multiphase : a solid-liquid coupled dambreak case using DEM-SPH(Darius,2017)
       logical dambreak, static, geometry, waterdrop,cavity,balloon,
      &    rotation, multiphase
-      parameter ( dambreak = .false.)
-      parameter ( static = .true.)
+      parameter ( dambreak = .true.)
+      parameter ( static = .false.)
       parameter ( geometry = .false.)
       parameter ( waterdrop = .false.)
-      parameter ( cavity = .true.)
+      parameter ( cavity = .false.)
       parameter ( balloon = .false.)
       parameter ( rotation = .false.)
       parameter ( multiphase = .false.)

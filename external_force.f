@@ -36,8 +36,9 @@ c     dvxdt   : Acceleration with respect to x, y and z            [out]
 c     Boundary particle force and penalty anti-penetration force. 
       xl = x_maxgeom-x_mingeom      
       rr0 = xl/mmp/2
+c     in cavityflow, this is valid since Monaghan's EOS is implied  
+c    ! and perhaps the only choice
       dd = c0**2
-c      print *,dd
       p1 = 12
       p2 = 4
       

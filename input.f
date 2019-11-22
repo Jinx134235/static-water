@@ -109,8 +109,8 @@ c     np-- total particle number in one column                     [out]
       double precision xl, yl, dx, dy, gate_x
 
 
-      m = 1872
-      n = 104
+      m = 300
+      n = 100
   
       xl = x_maxgeom-x_mingeom
       yl = y_maxgeom-y_mingeom

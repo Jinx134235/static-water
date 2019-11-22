@@ -11,7 +11,7 @@ c      rho-- dnesities of particles                       [input/output]
 c      p-- pressure  of particles                         [input/output]
 c      u-- internal energy of particles                   [input/output]
 c      c-- sound velocity of particles                          [output]
-c      s-- entropy of particles, not used here                  [output]
+c:qs-- entropy of particles, not used here                  [output]
 c      e-- total energy of particles                            [output]
 c      itype-- types of particles                               [input]
 c           =1   ideal gas
@@ -38,7 +38,8 @@ c      dt-- timestep                                             [input]
      &       rho_min(maxn), dx(dim,maxn), dvx(dim, maxn), du(maxn),  
      &       drho(maxn),  av(dim, maxn), ds(maxn),dxiac(dim),hv(dim),
      &       t(maxn), tdsdt(maxn), temp_u, temp_rho, sumvel, maxvel 
-      double precision  time, water_h, dis, xl, wij
+      double precision  time, water_h, dis, xl, wij, rr,dt_f(maxn),
+     &       dt_cv(maxn), dtt(2), vor(maxn)
       real :: bound(2,2)
     
       real, allocatable :: p_record(:),v_record(:,:),x_record(:,:),
@@ -81,7 +82,11 @@ c    timepoint for output and observation in dambreak
 
       nstart = current_ts
       do itimestep = nstart+1, nstart+maxtimestep   
-	   
+         dt_f = 0.
+         dt_cv = 0.
+         rr = 0.
+         temp_u =0.
+
         current_ts=current_ts+1
 c        time=current_ts*dt
         if (mod(itimestep,print_step).eq.0) then
@@ -94,8 +99,8 @@ c        time=current_ts*dt
 c---  Definition of variables out of the function vector:    
 
         call single_step(itimestep,nstart, dt, ntotal,nvirt,nwall, hsml,
-     &        mass,x, vx,u, s, rho, p, t, tdsdt, du, ds,c, itype, av,
-     &        niac, pair_i, pair_j, sumvel,maxvel)  
+     &        mass,x, vx,dvx,u, rho, p,c, itype, niac, pair_i, pair_j, 
+     &        sumvel,maxvel)  
      
 c      deal with those particles out of domain, maybe not work
 c        do i =1,ntotal
@@ -118,6 +123,34 @@ c          wavefront of dambreak
              x_record(1,i) = maxval(x(1,1:ntotal))/water_h
 c          waterheight of dambreak          
              x_record(2,i) = maxval(x(2,1:ntotal))/water_h
+c         vorticity of dambreak
+           if(dambreak) then
+              vor = 0.
+              temp_u = 0.
+              rr = 0.
+              do k = 1,niac
+                i = pair_i(k)
+                j = pair_j(k)
+                do d =1,dim
+                  dxiac(d) = x(d,i)-x(d,j)
+                  rr = rr +dxiac(d)**2
+                enddo
+                dis = sqrt(rr)
+                call kernel(dis,dxiac,hsml(i),wij,hv)
+                do d = 1,dim
+                   temp_u = temp_u + (vx(d,i)-vx(d,j))*hv(d)
+                 enddo
+                vor(i) = vor(i)+mass(j)*temp_u/rho(i)
+                vor(j) = vor(j)+mass(i)*temp_u/rho(j)
+              enddo
+
+            open(15,file="../data/vorticity.dat")
+             do i = 1,ntotal
+               write(15,1001) i, vor(i)
+             enddo
+1001         format(2x,I6,2x,e14.6)
+            close(15)
+           endif
          endif
 c       enddo
 c        print *,vx(2,1)
@@ -139,6 +172,35 @@ c           print *,p(1)
 c           print *,current_ts    
 c           stop
 c      endif
+c---   Variable timestep
+       if(variable_dt) then
+           do i = 1, ntotal
+              temp_u = sqrt(dvx(1,i)**2+dvx(2,i)**2)
+              dt_f(i) = sqrt(hsml(i)/temp_u)       
+           enddo
+           temp_u = 0.
+           do k = 1,niac
+              i = pair_i(k)
+              j = pair_j(k)
+              do d = 1,dim
+                 dxiac(d) = x(d,i)-x(d,j)
+                 rr = rr + dxiac(d)**2
+                 temp_u = temp_u+(vx(d,i)-vx(d,j))*dxiac(d)
+              enddo
+                          
+             dt_cv(i) = dt_cv(i)+hsml(i)*temp_u/rr
+             dt_cv(j) = dt_cv(j)-hsml(j)*temp_u/rr
+           enddo
+
+           dtt(1) = minval(dt_f)
+           dtt(2) = hsml(1)/(c0+maxval(dt_cv))
+          if(dtt(1).gt.dtt(2))then
+               dt = 0.3*dtt(2)
+           else
+               dt = 0.3*dtt(1)
+           endif   
+       endif        
+
         time = time + dt
 
         if(itimestep.eq.nstart+maxtimestep) then

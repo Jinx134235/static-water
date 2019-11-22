@@ -1,6 +1,6 @@
       subroutine single_step(itimestep,nstart, dt, ntotal, nvirt,nwall, 
-     &           hsml,mass, x, vx,u, s,rho, p, t, tdsdt, du,ds,c,
-     &           itype, av, niac, pair_i, pair_j, sumvel,maxvel) 
+     &           hsml,mass, x, vx,dvx, u, rho, p, c,
+     &           itype,niac, pair_i, pair_j, sumvel,maxvel) 
 
 c----------------------------------------------------------------------
 c   Subroutine to determine the right hand side of a differential 
